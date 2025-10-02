@@ -92,6 +92,11 @@
             startSeconds:{{ start_seconds }},
             endSeconds:{{ end_seconds }}
           });
+
+          // Prevent distraction by cuing a blank video after the clip ends
+          setTimeout(() => {
+            player.cueVideoById("");
+          }, ({{end_seconds}} - {{start_seconds}}) * 1000);
         }
       }
     </script>
