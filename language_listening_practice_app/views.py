@@ -12,7 +12,9 @@ def exercise_detail(request, exercise_id):
         'exercise_number': 33,
         'total_exercises': 100,
         'exercise_title': 'An Aphorism',
-        'video_url': 'https://www.youtube.com/embed/IJEn-9nAFQE?clip=UgkxHECVQoFBYuSrsZx59oRIsjzQlHaa_fdC&clipt=EPiARhi4v0Y',
+        'youtube_video_id': 'IJEn-9nAFQE',
+        'start_seconds': 85,
+        'end_seconds': 95,
         'is_new': True
     }
 
