@@ -33,6 +33,13 @@
 
         <!-- Buttons -->
         <div class="space-y-4">
+            <!-- Play Video Button -->
+            <button class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="playVideo()">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                </svg>
+                Play Video
+            </button>
             <!-- Record Yourself Button -->
             <button class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -57,8 +64,10 @@
         </div>
     </div>
     <script>
+      var player;
+      var playerReady = false;
       document.addEventListener('DOMContentLoaded', function() {
-        var player = new YT.Player('player', {
+        player = new YT.Player('player', {
           playerVars: {
             playsinline: 1,
             controls: 0,
@@ -69,18 +78,22 @@
         });
 
         player.getIframe().classList.add('w-full', 'h-full', 'rounded-lg', 'shadow-lg');
-
-        function onPlayerReady(event) {
-          document.body.onclick = function() {
-            player.loadVideoById({
-              videoId:"{{ youtube_video_id }}",
-              startSeconds:{{ start_seconds }},
-              endSeconds:{{ end_seconds }}
-            });
-          };
-        }
-
       });
+
+
+      function onPlayerReady(event) {
+        playerReady = true;
+      }
+
+      function playVideo() {
+        if(playerReady) {
+          player.loadVideoById({
+            videoId:"{{ youtube_video_id }}",
+            startSeconds:{{ start_seconds }},
+            endSeconds:{{ end_seconds }}
+          });
+        }
+      }
     </script>
 </body>
 </html>
