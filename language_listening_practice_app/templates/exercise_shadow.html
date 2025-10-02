@@ -1,160 +1,157 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ lesson_title }} - Exercise {{ exercise_number }}</title>
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-white">
-    <div class="max-w-3xl mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="mb-6">
-            <p class="text-sm text-gray-600 mb-2">lesson {{ lesson_number }}</p>
-            <h1 class="text-2xl text-gray-700 mb-4">{{ lesson_title }}</h1>
+{% extends "base.html" %}
 
-            <!-- Progress bar -->
-            <div class="w-full bg-gray-200 h-6 rounded">
-                <div class="bg-gray-600 h-6 rounded" style="width: {{ progress_percentage }}%"></div>
-            </div>
-            <p class="text-right text-sm text-gray-600 mt-1">{{ exercise_number }}/{{ total_exercises }}</p>
-        </div>
+{% block title %}{{ lesson_title }} - Exercise {{ exercise_number }}{% endblock %}
 
-        <!-- Exercise Title -->
-        <h2 class="text-3xl text-gray-800 mb-8">{{ exercise_number }}: {{ exercise_title }} {% if is_new %}(new){% endif %}</h2>
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <p class="text-sm text-gray-600 mb-2">lesson {{ lesson_number }}</p>
+    <h1 class="text-2xl text-gray-700 mb-4">{{ lesson_title }}</h1>
 
-        <!-- YouTube Video -->
-        <div class="mb-6">
-            <div class="aspect-video w-full">
-              <div id="player"></div>
-            </div>
-        </div>
-
-        <!-- Buttons -->
-        <div class="space-y-4">
-            <!-- Play Video Button -->
-            <button class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="playVideo()">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
-                </svg>
-                Play Video
-            </button>
-            <!-- Record Yourself Button -->
-            <button id="recordButton" class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="toggleRecording()">
-                <svg id="recordIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z"/>
-                    <path d="M5.5 9.643a.75.75 0 00-1.5 0V10c0 3.06 2.29 5.585 5.25 5.954V17.5h-1.5a.75.75 0 000 1.5h4.5a.75.75 0 000-1.5h-1.5v-1.546A6.001 6.001 0 0016 10v-.357a.75.75 0 00-1.5 0V10a4.5 4.5 0 01-9 0v-.357z"/>
-                </svg>
-                <svg id="stopIcon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20">
-                    <rect x="5" y="5" width="10" height="10" rx="1"/>
-                </svg>
-                <span id="recordText">Record Yourself</span>
-            </button>
-
-            <!-- Audio Player (hidden by default) -->
-            <div id="audioPlayerContainer" class="hidden">
-                <audio id="audioPlayer" controls class="w-full"></audio>
-            </div>
-
-            <!-- Next Button -->
-            <button class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition">
-                Next
-            </button>
-        </div>
+    <!-- Progress bar -->
+    <div class="w-full bg-gray-200 h-6 rounded">
+      <div class="bg-gray-600 h-6 rounded" style="width: {{ progress_percentage }}%"></div>
     </div>
-    <script>
-      var player;
-      var playerReady = false;
-      document.addEventListener('DOMContentLoaded', function() {
-        player = new YT.Player('player', {
-          playerVars: {
-            playsinline: 1,
-            controls: 0,
-          },
-          events: {
-            onReady: onPlayerReady,
-          }
-        });
+    <p class="text-right text-sm text-gray-600 mt-1">{{ exercise_number }}/{{ total_exercises }}</p>
+  </div>
 
-        player.getIframe().classList.add('w-full', 'h-full', 'rounded-lg', 'shadow-lg');
+  <!-- Exercise Title -->
+  <h2 class="text-3xl text-gray-800 mb-8">{{ exercise_number }}: {{ exercise_title }} {% if is_new %}(new){% endif %}</h2>
+
+  <!-- YouTube Video -->
+  <div class="mb-6">
+    <div class="aspect-video w-full">
+      <div id="player"></div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="space-y-4">
+    <!-- Play Video Button -->
+    <button class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="playVideo()">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+      </svg>
+      Play Video
+    </button>
+    <!-- Record Yourself Button -->
+    <button id="recordButton" class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="toggleRecording()">
+      <svg id="recordIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z"/>
+        <path d="M5.5 9.643a.75.75 0 00-1.5 0V10c0 3.06 2.29 5.585 5.25 5.954V17.5h-1.5a.75.75 0 000 1.5h4.5a.75.75 0 000-1.5h-1.5v-1.546A6.001 6.001 0 0016 10v-.357a.75.75 0 00-1.5 0V10a4.5 4.5 0 01-9 0v-.357z"/>
+      </svg>
+      <svg id="stopIcon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20">
+        <rect x="5" y="5" width="10" height="10" rx="1"/>
+      </svg>
+      <span id="recordText">Record Yourself</span>
+    </button>
+
+    <!-- Audio Player (hidden by default) -->
+    <div id="audioPlayerContainer" class="hidden">
+      <audio id="audioPlayer" controls class="w-full"></audio>
+    </div>
+
+    <!-- Next Button -->
+    <button class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition">
+      Next
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var player;
+  var playerReady = false;
+  document.addEventListener('DOMContentLoaded', function() {
+    player = new YT.Player('player', {
+      playerVars: {
+        playsinline: 1,
+        controls: 0,
+      },
+      events: {
+        onReady: onPlayerReady,
+      }
+    });
+
+    player.getIframe().classList.add('w-full', 'h-full', 'rounded-lg', 'shadow-lg');
+  });
+
+
+  function onPlayerReady(event) {
+    playerReady = true;
+  }
+
+  function playVideo() {
+    if(playerReady) {
+      player.loadVideoById({
+        videoId:"{{ youtube_video_id }}",
+        startSeconds:{{ start_seconds }},
+        endSeconds:{{ end_seconds }}
       });
 
+      // Prevent distraction by cuing a blank video after the clip ends
+      setTimeout(() => {
+        player.cueVideoById("");
+      }, ({{end_seconds}} - {{start_seconds}}) * 1000);
+    }
+  }
 
-      function onPlayerReady(event) {
-        playerReady = true;
+  // Audio recording functionality
+  let mediaRecorder;
+  let audioChunks = [];
+  let isRecording = false;
+
+  async function toggleRecording() {
+    if (!isRecording) {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audioPlayer = document.getElementById('audioPlayer');
+          audioPlayer.src = audioUrl;
+          document.getElementById('audioPlayerContainer').classList.remove('hidden');
+
+          // Stop all tracks to release microphone
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+
+        // Update button UI
+        document.getElementById('recordIcon').classList.add('hidden');
+        document.getElementById('stopIcon').classList.remove('hidden');
+        document.getElementById('recordText').textContent = 'Stop Recording';
+        document.getElementById('recordButton').classList.add('bg-red-50', 'border-red-300');
+        document.getElementById('recordButton').classList.remove('hover:bg-gray-50');
+
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        alert('Could not access microphone. Please grant permission.');
       }
+    } else {
+      // Stop recording
+      mediaRecorder.stop();
+      isRecording = false;
 
-      function playVideo() {
-        if(playerReady) {
-          player.loadVideoById({
-            videoId:"{{ youtube_video_id }}",
-            startSeconds:{{ start_seconds }},
-            endSeconds:{{ end_seconds }}
-          });
-
-          // Prevent distraction by cuing a blank video after the clip ends
-          setTimeout(() => {
-            player.cueVideoById("");
-          }, ({{end_seconds}} - {{start_seconds}}) * 1000);
-        }
-      }
-
-      // Audio recording functionality
-      let mediaRecorder;
-      let audioChunks = [];
-      let isRecording = false;
-
-      async function toggleRecording() {
-        if (!isRecording) {
-          // Start recording
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-              audioChunks.push(event.data);
-            };
-
-            mediaRecorder.onstop = () => {
-              const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-              const audioUrl = URL.createObjectURL(audioBlob);
-              const audioPlayer = document.getElementById('audioPlayer');
-              audioPlayer.src = audioUrl;
-              document.getElementById('audioPlayerContainer').classList.remove('hidden');
-
-              // Stop all tracks to release microphone
-              stream.getTracks().forEach(track => track.stop());
-            };
-
-            mediaRecorder.start();
-            isRecording = true;
-
-            // Update button UI
-            document.getElementById('recordIcon').classList.add('hidden');
-            document.getElementById('stopIcon').classList.remove('hidden');
-            document.getElementById('recordText').textContent = 'Stop Recording';
-            document.getElementById('recordButton').classList.add('bg-red-50', 'border-red-300');
-            document.getElementById('recordButton').classList.remove('hover:bg-gray-50');
-
-          } catch (error) {
-            console.error('Error accessing microphone:', error);
-            alert('Could not access microphone. Please grant permission.');
-          }
-        } else {
-          // Stop recording
-          mediaRecorder.stop();
-          isRecording = false;
-
-          // Update button UI
-          document.getElementById('recordIcon').classList.remove('hidden');
-          document.getElementById('stopIcon').classList.add('hidden');
-          document.getElementById('recordText').textContent = 'Record Yourself';
-          document.getElementById('recordButton').classList.remove('bg-red-50', 'border-red-300');
-          document.getElementById('recordButton').classList.add('hover:bg-gray-50');
-        }
-      }
-    </script>
-</body>
-</html>
+      // Update button UI
+      document.getElementById('recordIcon').classList.remove('hidden');
+      document.getElementById('stopIcon').classList.add('hidden');
+      document.getElementById('recordText').textContent = 'Record Yourself';
+      document.getElementById('recordButton').classList.remove('bg-red-50', 'border-red-300');
+      document.getElementById('recordButton').classList.add('hover:bg-gray-50');
+    }
+  }
+</script>
+{% endblock %}
