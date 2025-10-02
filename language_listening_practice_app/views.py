@@ -1,8 +1,8 @@
 from django.shortcuts import render
 
 
-def exercise_detail(request, exercise_id):
-    """Display an exercise detail page."""
+def exercise_shadow(request, exercise_id):
+    """Display a shadow exercise page."""
 
     # Sample data - replace with database queries later
     context = {
@@ -18,4 +18,4 @@ def exercise_detail(request, exercise_id):
         'is_new': True
     }
 
-    return render(request, 'exercise_detail.html', context)
+    return render(request, 'exercise_shadow.html', context)
