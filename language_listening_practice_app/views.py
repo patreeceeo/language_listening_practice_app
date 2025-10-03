@@ -19,13 +19,13 @@ def _get_exercise_context(exercise_id):
 
 
 def exercise_shadow(request, exercise_id):
-    """Display a shadow exercise page with recording and navigation."""
+    """Display a shadow exercise page."""
     context = _get_exercise_context(exercise_id)
     return render(request, 'exercise_shadow.html', context)
 
 
 def exercise_transcribe(request, exercise_id):
-    """Display transcription exercise without recording or navigation."""
+    """Display transcription exercise page."""
     context = _get_exercise_context(exercise_id)
     context['transcript'] = "どういうおんがくをきくの? すきなおんがくはろっく。"
     return render(request, 'exercise_transcribe.html', context)
