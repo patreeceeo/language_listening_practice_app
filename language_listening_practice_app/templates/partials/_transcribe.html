@@ -1,0 +1,77 @@
+
+<h3>What did you hear?</h3>
+<textarea id="trascribe-textarea" class="w-full border border-gray-300 rounded-lg p-4 mb-6" rows="4" placeholder="聞いたことを入力してください..."></textarea>
+<button id="Transcribe_checkButton" class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition mb-6" onclick="TranscribePartial.checkTranscription()">
+  Check
+</button>
+<div id="Transcibe_diffResult" class="mb-6"></div>
+<div class="mt-2 text-sm text-gray-600">
+  <span class="text-green-600">■</span> Correct &nbsp;
+  <span class="bg-red-200 text-red-800 px-1">■</span> Extra &nbsp;
+  <span class="bg-yellow-200 text-yellow-800 px-1">■</span> Missing
+</div>
+<button id="Transcribe_nextButton" class="hidden w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition mb-6" onclick="TranscribePartial.checkTranscription()">
+  Next
+</button>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => TranscribePartial.init());
+
+  const TranscribePartial = {
+    textarea: null,
+    init() {
+      this.textarea = document.getElementById('trascribe-textarea');
+      wanakana.bind(this.textarea);
+    },
+
+    normalize(text) {
+      // Remove all spaces and punctuation
+      return text.replace(/[\s\p{P}]/gu, '');
+    },
+
+    generateDiff(userInput, correctAnswer) {
+      const normalized1 = this.normalize(userInput);
+      const normalized2 = this.normalize(correctAnswer);
+
+      // Use jsdiff library for proper diff algorithm
+      const diff = Diff.diffChars(normalized2, normalized1);
+
+      let diffHtml = '<div class="p-4 bg-gray-50 rounded-lg font-mono text-lg leading-relaxed">';
+
+      diff.forEach(part => {
+        if (part.added) {
+          // User added extra characters
+          diffHtml += `<span class="bg-red-200 text-red-800 px-1">${part.value}</span>`;
+        } else if (part.removed) {
+          // User is missing these characters
+          diffHtml += `<span class="bg-yellow-200 text-yellow-800 px-1">${part.value}</span>`;
+        } else {
+          // Correct
+          diffHtml += `<span class="text-green-600">${part.value}</span>`;
+        }
+      });
+
+      return diffHtml;
+    },
+
+    checkTranscription() {
+      const userInput = this.textarea.value
+      const correctAnswer = `{{ transcript }}`;
+      const diffResult = document.getElementById('Transcibe_diffResult');
+
+      if (this.normalize(userInput) === this.normalize(correctAnswer)) {
+        diffResult.innerHTML = '<div class="p-4 bg-green-100 text-green-800 rounded-lg">Correct! Well done.</div>';
+      } else {
+        diffResult.innerHTML = '<h4 class="font-semibold mb-2">Comparison:</h4>' + this.generateDiff(userInput, correctAnswer);
+      }
+      this.textarea.disabled = true;
+
+      // Show Next Button
+      document.getElementById('Transcribe_nextButton').classList.remove('hidden');
+
+      // Hide Check Button
+      document.getElementById('Transcribe_checkButton').classList.add('hidden');
+    }
+  };
+</script>
+
