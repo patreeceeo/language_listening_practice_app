@@ -30,3 +30,10 @@ def exercise_transcribe(request, exercise_id):
     context['transcript'] = "どういうおんがくをきくの? すきなおんがくはろっく。"
     return render(request, 'exercise_transcribe.html', context)
 
+def exercise_multiple_choice(request, exercise_id):
+    """Display multiple choice exercise page."""
+    context = _get_exercise_context(exercise_id)
+    context['question'] = "What is the capital of France?"
+    context['choices'] = ["Berlin", "Madrid", "Paris", "Rome"]
+    context['correct_answer'] = "Paris"
+    return render(request, 'exercise_multiple_choice.html', context)

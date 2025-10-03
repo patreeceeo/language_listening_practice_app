@@ -1,0 +1,88 @@
+
+<h3>{{ question }}</h3>
+
+<div id="MultipleChoice_choicesContainer" class="space-y-3 mb-6">
+  {% for choice in choices %}
+  <button
+    class="w-full text-left border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition"
+    onclick="MultipleChoicePartial.selectChoice(this, '{{ choice }}')"
+  >
+    {{ choice }}
+  </button>
+  {% endfor %}
+</div>
+
+<button
+  id="MultipleChoice_checkButton"
+  class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition mb-6 opacity-50 cursor-not-allowed"
+  onclick="MultipleChoicePartial.checkAnswer()"
+  disabled
+>
+  Check
+</button>
+
+<div id="MultipleChoice_result" class="mb-6"></div>
+
+<button
+  id="MultipleChoice_nextButton"
+  class="hidden w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition mb-6"
+>
+  Next
+</button>
+
+<script>
+  const MultipleChoicePartial = {
+    selectedChoice: null,
+    correctAnswer: '{{ correct_answer }}',
+
+    selectChoice(button, choice) {
+      // Remove previous selection
+      document.querySelectorAll('#MultipleChoice_choicesContainer button').forEach(btn => {
+        btn.classList.remove('border-blue-500', 'bg-blue-50');
+        btn.classList.add('border-gray-300');
+      });
+
+      // Highlight selected choice
+      button.classList.remove('border-gray-300');
+      button.classList.add('border-blue-500', 'bg-blue-50');
+
+      this.selectedChoice = choice;
+
+      // Enable check button
+      const checkButton = document.getElementById('MultipleChoice_checkButton');
+      checkButton.disabled = false;
+      checkButton.classList.remove('opacity-50', 'cursor-not-allowed');
+    },
+
+    checkAnswer() {
+      const resultDiv = document.getElementById('MultipleChoice_result');
+      const choiceButtons = document.querySelectorAll('#MultipleChoice_choicesContainer button');
+
+      // Disable all choice buttons
+      choiceButtons.forEach(btn => btn.disabled = true);
+
+      // Highlight correct and incorrect answers
+      choiceButtons.forEach(btn => {
+        const btnText = btn.textContent.trim();
+        if (btnText === this.correctAnswer) {
+          btn.classList.remove('border-gray-300', 'border-blue-500', 'bg-blue-50');
+          btn.classList.add('border-green-500', 'bg-green-100');
+        } else if (btnText === this.selectedChoice && this.selectedChoice !== this.correctAnswer) {
+          btn.classList.remove('border-gray-300', 'border-blue-500', 'bg-blue-50');
+          btn.classList.add('border-red-500', 'bg-red-100');
+        }
+      });
+
+      // Show result message
+      if (this.selectedChoice === this.correctAnswer) {
+        resultDiv.innerHTML = '<div class="p-4 bg-green-100 text-green-800 rounded-lg">Correct! Well done.</div>';
+      } else {
+        resultDiv.innerHTML = '<div class="p-4 bg-red-100 text-red-800 rounded-lg">Incorrect. The correct answer is: ' + this.correctAnswer + '</div>';
+      }
+
+      // Hide check button, show next button
+      document.getElementById('MultipleChoice_checkButton').classList.add('hidden');
+      document.getElementById('MultipleChoice_nextButton').classList.remove('hidden');
+    }
+  };
+</script>

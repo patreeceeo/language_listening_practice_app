@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('exercises/<int:exercise_id>/shadow', views.exercise_shadow, name='exercise_shadow'),
     path('exercises/<int:exercise_id>/transcribe', views.exercise_transcribe, name='exercise_transcribe'),
+    path('exercises/<int:exercise_id>/question', views.exercise_multiple_choice, name='exercise_multiple_choice'),
 ]
