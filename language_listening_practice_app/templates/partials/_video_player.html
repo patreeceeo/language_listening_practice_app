@@ -1,0 +1,56 @@
+<!-- YouTube Video -->
+<div class="mb-6">
+  <div class="aspect-video w-full">
+    <div id="player"></div>
+  </div>
+</div>
+
+<!-- Buttons -->
+<div class="space-y-4">
+  <!-- Play Video Button -->
+  <button class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="VideoPlayerPartial.playVideo()">
+    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+    </svg>
+    Play Video
+  </button>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => VideoPlayerPartial.init());
+
+
+  const VideoPlayerPartial = {
+    player: null,
+    playerReady: false,
+    init() {
+      this.player = new YT.Player('player', {
+        playerVars: {
+          playsinline: 1,
+          controls: 0,
+        },
+        events: {
+          onReady: this.onPlayerReady.bind(this),
+        }
+      });
+
+      this.player.getIframe().classList.add('w-full', 'h-full', 'rounded-lg', 'shadow-lg');
+    },
+    playVideo() {
+      if(this.playerReady) {
+        this.player.loadVideoById({
+          videoId:"{{ youtube_video_id }}",
+          startSeconds:{{ start_seconds }},
+          endSeconds:{{ end_seconds }}
+        });
+
+        // Prevent distraction by cuing a blank video after the clip ends
+        setTimeout(() => {
+          this.player.cueVideoById("");
+        }, ({{end_seconds}} - {{start_seconds}}) * 1000);
+      }
+    },
+    onPlayerReady(event) {
+      this.playerReady = true;
+    }
+  };
+</script>
