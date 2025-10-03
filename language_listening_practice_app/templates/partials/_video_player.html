@@ -8,11 +8,18 @@
 <!-- Buttons -->
 <div class="space-y-4">
   <!-- Play Video Button -->
-  <button class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="VideoPlayerPartial.playVideo()">
+  <button id="VideoPlayer_playButton" class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="VideoPlayerPartial.playVideo()">
     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
       <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
     </svg>
     Play Video
+  </button>
+  <!-- Stop Video Button -->
+  <button id="VideoPlayer_stopButton" class="hidden w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="VideoPlayerPartial.stopVideo()">
+    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <rect x="5" y="5" width="10" height="10" rx="1"/>
+    </svg>
+    Stop Video
   </button>
 
 <script>
@@ -22,6 +29,7 @@
   const VideoPlayerPartial = {
     player: null,
     playerReady: false,
+    timeoutId: null,
     init() {
       this.player = new YT.Player('player', {
         playerVars: {
@@ -37,16 +45,36 @@
     },
     playVideo() {
       if(this.playerReady) {
+        // Show stop button, hide play button
+        document.getElementById('VideoPlayer_playButton').classList.add('hidden');
+        document.getElementById('VideoPlayer_stopButton').classList.remove('hidden');
+
         this.player.loadVideoById({
           videoId:"{{ youtube_video_id }}",
           startSeconds:{{ start_seconds }},
           endSeconds:{{ end_seconds }}
         });
 
-        // Prevent distraction by cuing a blank video after the clip ends
-        setTimeout(() => {
-          this.player.cueVideoById("");
+        // Loop video
+        this.timeoutId = setTimeout(() => {
+          this.playVideo();
         }, ({{end_seconds}} - {{start_seconds}}) * 1000);
+      }
+    },
+    stopVideo() {
+      // Show play button, hide stop button
+      document.getElementById('VideoPlayer_playButton').classList.remove('hidden');
+      document.getElementById('VideoPlayer_stopButton').classList.add('hidden');
+
+      // Cue an invalid video to stop playback
+      this.player.cueVideoById({
+        videoId: "",
+      });
+
+      // Clear the timeout to stop looping
+      if (this.timeoutId) {
+        clearTimeout(this.timeoutId);
+        this.timeoutId = null;
       }
     },
     onPlayerReady(event) {
