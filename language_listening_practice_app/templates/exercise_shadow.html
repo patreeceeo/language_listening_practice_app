@@ -1,12 +1,81 @@
-{% extends "base.html" %}
+{% extends "exercise.html" %}
 
-{% block title %}{{ lesson_title }} - Exercise {{ exercise_number }}{% endblock %}
+{% block exercise_content %}
+<!-- Record Yourself Button -->
+<button id="recordButton" class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2" onclick="ExerciseShadow.toggleRecording()">
+  <svg id="recordIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z"/>
+    <path d="M5.5 9.643a.75.75 0 00-1.5 0V10c0 3.06 2.29 5.585 5.25 5.954V17.5h-1.5a.75.75 0 000 1.5h4.5a.75.75 0 000-1.5h-1.5v-1.546A6.001 6.001 0 0016 10v-.357a.75.75 0 00-1.5 0V10a4.5 4.5 0 01-9 0v-.357z"/>
+  </svg>
+  <svg id="stopIcon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20">
+    <rect x="5" y="5" width="10" height="10" rx="1"/>
+  </svg>
+  <span id="recordText">Record Yourself</span>
+</button>
 
-{% block content %}
-<div class="max-w-3xl mx-auto px-4 py-8">
-  {% include "partials/_exercise_header.html" %}
-  {% include "partials/_exercise_title.html" %}
-  {% include "partials/_video_player.html" %}
-  {% include "partials/_shadow.html" %}
+<!-- Audio Player (hidden by default) -->
+<div id="audioPlayerContainer" class="hidden">
+  <audio id="audioPlayer" controls class="w-full"></audio>
 </div>
+
+<script>
+  // Audio recording functionality
+  const ExerciseShadow = {
+    mediaRecorder: null,
+    audioChunks: [],
+    isRecording: false,
+
+    async toggleRecording() {
+      if (!this.isRecording) {
+        // Start recording
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          this.mediaRecorder = new MediaRecorder(stream);
+          this.audioChunks = [];
+
+          this.mediaRecorder.ondataavailable = (event) => {
+            this.audioChunks.push(event.data);
+          };
+
+          this.mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = audioUrl;
+            document.getElementById('audioPlayerContainer').classList.remove('hidden');
+
+            // Stop all tracks to release microphone
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          this.mediaRecorder.start();
+          this.isRecording = true;
+
+          // Update button UI
+          document.getElementById('recordIcon').classList.add('hidden');
+          document.getElementById('stopIcon').classList.remove('hidden');
+          document.getElementById('recordText').textContent = 'Stop Recording';
+          document.getElementById('recordButton').classList.add('bg-red-50', 'border-red-300');
+          document.getElementById('recordButton').classList.remove('hover:bg-gray-50');
+
+        } catch (error) {
+          console.error('Error accessing microphone:', error);
+          alert('Could not access microphone. Please grant permission.');
+        }
+      } else {
+        // Stop recording
+        this.mediaRecorder.stop();
+        this.isRecording = false;
+
+        // Update button UI
+        document.getElementById('recordIcon').classList.remove('hidden');
+        document.getElementById('stopIcon').classList.add('hidden');
+        document.getElementById('recordText').textContent = 'Record Yourself';
+        document.getElementById('recordButton').classList.remove('bg-red-50', 'border-red-300');
+        document.getElementById('recordButton').classList.add('hover:bg-gray-50');
+      }
+    }
+  }
+</script>
+
 {% endblock %}

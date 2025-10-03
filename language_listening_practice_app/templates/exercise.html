@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lesson_title }} - Exercise {{ exercise_number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+  {% include "partials/_exercise_header.html" %}
+  {% include "partials/_exercise_title.html" %}
+  {% include "partials/_video_player.html" %}
+  
+  <form action="/submit_exercise" method="post" class="mb-6">
+
+    {% block exercise_content %}
+    {% endblock %}
+
+    <button type="submit" class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+      Next
+    </button>
+  </form>
+</div>
+{% endblock %}
