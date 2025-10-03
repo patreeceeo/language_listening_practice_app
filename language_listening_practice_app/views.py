@@ -47,15 +47,21 @@ exercise_data = [
     },
 ]
 
+data = {
+    'current_exercise': 0,
+    'exercises': exercise_data,
+}
+
 template_mapping = {
     'shadow': 'exercise_shadow.html',
     'transcribe': 'exercise_transcribe.html',
     'multiple_choice': 'exercise_multiple_choice.html',
 }
 
-def exercise(request, exercise_id: int):
-    """Display a shadow exercise page."""
-    context = exercise_data[exercise_id % len(exercise_data)]
+def current_exercise(request):
+    """Display the current exercise page."""
+    exercise_number = data['current_exercise']
+    context = data['exercises'][exercise_number]
 
     return render(request, template_mapping[context['type']], context)
 
