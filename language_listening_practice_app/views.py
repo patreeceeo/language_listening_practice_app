@@ -15,7 +15,6 @@ def _get_exercise_context(exercise_id):
         'start_seconds': 84.7,
         'end_seconds': 92,
         'is_new': True,
-        'transcript': "どういうおんがくをきくの? すきなおんがくはろっく。",
     }
 
 
@@ -28,5 +27,6 @@ def exercise_shadow(request, exercise_id):
 def exercise_transcribe(request, exercise_id):
     """Display transcription exercise without recording or navigation."""
     context = _get_exercise_context(exercise_id)
+    context['transcript'] = "どういうおんがくをきくの? すきなおんがくはろっく。"
     return render(request, 'exercise_transcribe.html', context)
 
