@@ -64,7 +64,7 @@ def current_exercise(request):
     exercise_number = data['current_exercise']
     context = data['exercises'][exercise_number]
 
-    if(exercise_number == len(data['exercises']) - 1):
+    if(exercise_number == len(data['exercises'])):
         return render(request, 'all_done.html')
     else:
         return render(request, template_mapping[context['type']], context)
