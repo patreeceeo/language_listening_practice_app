@@ -1,4 +1,6 @@
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse
 import random
 
 exercise_data = [
@@ -63,6 +65,13 @@ def current_exercise(request):
     exercise_number = data['current_exercise']
     context = data['exercises'][exercise_number]
 
-    return render(request, template_mapping[context['type']], context)
+    if(exercise_number == len(data['exercises']) - 1):
+        return render(request, 'all_done.html')
+    else:
+        return render(request, template_mapping[context['type']], context)
 
+
+def submit_answer(request):
+    data['current_exercise'] += 1
+    return HttpResponseRedirect(reverse("current_exercise"))
 
