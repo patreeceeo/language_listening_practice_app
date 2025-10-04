@@ -62,11 +62,11 @@ template_mapping = {
 def current_exercise(request):
     """Display the current exercise page."""
     exercise_number = data['current_exercise']
-    context = data['exercises'][exercise_number]
 
     if(exercise_number == len(data['exercises'])):
         return render(request, 'all_done.html')
     else:
+        context = data['exercises'][exercise_number]
         return render(request, template_mapping[context['type']], context)
 
 
