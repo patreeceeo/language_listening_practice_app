@@ -7,7 +7,7 @@
   {% for choice in choices %}
   <button
       class="w-full text-left border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition"
-      onclick="ExerciseMultipleChoice.selectChoice(this, '{{ choice }}')"
+      onclick="ExerciseMultipleChoice.selectChoice(event, '{{ choice }}')"
       >
       {{ choice }}
   </button>
@@ -17,7 +17,7 @@
 <button
     id="MultipleChoice_checkButton"
     class="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition mb-6 opacity-50 cursor-not-allowed"
-    onclick="ExerciseMultipleChoice.checkAnswer()"
+    onclick="ExerciseMultipleChoice.checkAnswer(event)"
     disabled
     >
     Check
@@ -30,7 +30,9 @@
         selectedChoice: null,
         correctAnswer: '{{ correct_answer }}',
 
-        selectChoice(button, choice) {
+        selectChoice(event, choice) {
+          event.preventDefault();
+          const button = event.currentTarget;
           // Remove previous selection
           document.querySelectorAll('#MultipleChoice_choicesContainer button').forEach(btn => {
             btn.classList.remove('border-blue-500', 'bg-blue-50');
@@ -49,7 +51,8 @@
           checkButton.classList.remove('opacity-50', 'cursor-not-allowed');
         },
 
-        checkAnswer() {
+        checkAnswer(event) {
+          event.preventDefault();
           const resultDiv = document.getElementById('MultipleChoice_result');
           const choiceButtons = document.querySelectorAll('#MultipleChoice_choicesContainer button');
 
@@ -76,6 +79,8 @@
           }
 
           document.getElementById('MultipleChoice_checkButton').classList.add('hidden');
+
+          Exercise.showNextButton();
         }
       };
     </script>

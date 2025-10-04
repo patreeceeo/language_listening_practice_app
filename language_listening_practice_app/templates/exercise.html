@@ -12,8 +12,15 @@
   {% block exercise_content %}
   {% endblock %}
 
-  <button type="submit" class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+  <button id="Exercise_nextButton" type="submit" class="hidden w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
     Next
   </button>
 </form>
+<script>
+  const Exercise = {
+    showNextButton() {
+      document.getElementById('Exercise_nextButton').classList.remove('hidden');
+    }
+  };
+</script>
 {% endblock %}
