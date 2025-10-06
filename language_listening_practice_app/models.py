@@ -22,7 +22,7 @@ class Exercise(models.Model):
     show_video = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.type} Exercise"
+        return f"{self.type} for clip {self.youtube_clip}"
 
 class Lesson(models.Model):
     number = models.IntegerField()
@@ -30,5 +30,5 @@ class Lesson(models.Model):
     exercises = models.ManyToManyField(Exercise)
 
     def __str__(self):
-        return f"#{self.number}: {self.title}"
+        return f"#{self.number} {self.title}"
 
