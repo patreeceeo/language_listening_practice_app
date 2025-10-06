@@ -32,3 +32,11 @@ class Lesson(models.Model):
     def __str__(self):
         return f"#{self.number} {self.title}"
 
+class ExerciseAttempt(models.Model):
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    user_answer = models.TextField()
+    is_correct = models.BooleanField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.exercise} at {self.timestamp}"
