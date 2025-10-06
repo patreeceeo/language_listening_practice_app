@@ -28,7 +28,7 @@ exercise_data = [
         'youtube_video_id': 'IJEn-9nAFQE',
         'start_seconds': 84.7,
         'end_seconds': 92,
-        'transcript': "どういうおんがくをきくの? すきなおんがくはろっく。",
+        'correct_answer': "どういうおんがくをきくの? すきなおんがくはろっく。",
     },
     {
         'type': 'multiple_choice',

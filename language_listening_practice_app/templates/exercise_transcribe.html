@@ -55,7 +55,7 @@
     checkTranscription(event) {
       event.preventDefault();  // Prevent form submission
       const userInput = this.textarea.value
-      const correctAnswer = `{{ transcript }}`;
+      const correctAnswer = `{{ correct_answer }}`;
       const diffResult = document.getElementById('Transcibe_diffResult');
 
       if (this.normalize(userInput) === this.normalize(correctAnswer)) {
