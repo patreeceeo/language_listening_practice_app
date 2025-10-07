@@ -1,6 +1,9 @@
 from django.http import HttpResponseRedirect, HttpRequest
 from django.shortcuts import render
 from django.urls import reverse
+from django.db.models import Q, Max, OuterRef, Subquery
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from .models import Exercise, ExerciseAttempt
 
@@ -29,24 +32,56 @@ template_mapping = {
     'multiple_choice': 'exercise_multiple_choice.html',
 }
 
+def get_session_exercises():
+    """
+    Get exercises that either:
+    1. Have never been attempted
+    2. Were last attempted incorrectly
+    3. Were last attempted more than rest_interval minutes ago
+    Return them in random order.
+    """
+    before_rest_interval = datetime.now(ZoneInfo("UTC")) - timedelta(minutes=1)
+    latest_attempt = ExerciseAttempt.objects.filter(
+        exercise=OuterRef('pk')
+    ).order_by('-timestamp').values('is_correct')[:1]
+
+    return Exercise.objects.annotate(
+        last_attempt_time=Max('exerciseattempt__timestamp'),
+        last_attempt_correct=Subquery(latest_attempt)
+    ).filter(
+        Q(exerciseattempt__isnull=True) | # Never attempted
+        Q(last_attempt_correct=False) | # Last attempt was incorrect
+        Q(last_attempt_time__lt=before_rest_interval) # Last attempt was more than one minute ago
+    ).distinct().order_by('?')  # Random order
+
 def current_exercise(request: HttpRequest):
     """Display the current exercise page."""
-    # Get first exercise that doesn't have an attempt
-    exercise = Exercise.objects.filter(exerciseattempt__isnull=True).first()
+    exercises = get_session_exercises()
 
-    if(exercise == None):
+    if not exercises.exists():
         return render(request, 'all_done.html')
-    else:
-        context = get_exercise_context(exercise)
-        return render(request, template_mapping[context['type']], context)
 
+    context = get_exercise_context(exercises.first())
+    template = template_mapping.get(context['type'])
+    return render(request, template, context)
+
+def loose_str_compare(a: str, b: str) -> bool:
+    """Compare two strings loosely, ignoring case and whitespace and punctuation."""
+    return ''.join(e for e in a if e.isalnum()).lower() == ''.join(e for e in b if e.isalnum()).lower()
 
 def submit_answer(request: HttpRequest):
     """Handle submission of an exercise answer."""
     exercise_id = request.POST.get('exercise_id')
     exercise = Exercise.objects.get(id=exercise_id)
     answer = request.POST.get('answer') if exercise.type != 'shadow' else '';
-    is_correct = (answer == exercise.correct_answer) if exercise.type != 'shadow' else True
+    is_correct = loose_str_compare(answer, exercise.correct_answer) if exercise.type != 'shadow' else True
+
+    print(f"""
+          User answered:  '{answer}'
+          Correct answer: '{exercise.correct_answer}'
+          Correct: {is_correct}
+          """)
+
     attempt = ExerciseAttempt(
             exercise=exercise,
             user_answer=answer,
