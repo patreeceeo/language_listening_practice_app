@@ -1,44 +1,73 @@
-from django.db import models
+from django.db.models import (
+    Model, CharField, FloatField, ForeignKey, TextField, BooleanField,
+    ManyToManyField, DateTimeField, JSONField, CASCADE, Q, OuterRef, Subquery, Max,
+    IntegerField
+    )
 from django.contrib.auth.models import User
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
-class YouTubeClip(models.Model):
-    video_id = models.CharField(max_length=20)
-    start_seconds = models.FloatField()
-    end_seconds = models.FloatField()
+class YouTubeClip(Model):
+    video_id = CharField(max_length=20)
+    start_seconds = FloatField()
+    end_seconds = FloatField()
 
     def __str__(self):
         return f"{self.video_id} ({self.start_seconds}-{self.end_seconds})"
 
-class Exercise(models.Model):
+class Exercise(Model):
     TYPES = {
         "shadow": "Shadowing",
         "transcribe": "Transcription",
         "multiple_choice": "Multiple Choice",
     }
-    type = models.CharField(choices=TYPES)
-    youtube_clip = models.ForeignKey(YouTubeClip, on_delete=models.CASCADE)
-    question = models.TextField(blank=True, null=True)
-    answers = models.JSONField(blank=True, null=True)  # For multiple choice
-    correct_answer = models.CharField(max_length=255, blank=True, null=True)
-    show_video = models.BooleanField(default=True)
+    type = CharField(choices=TYPES)
+    youtube_clip = ForeignKey(YouTubeClip, on_delete=CASCADE)
+    question = TextField(blank=True, null=True)
+    answers = JSONField(blank=True, null=True)  # For multiple choice
+    correct_answer = CharField(max_length=255, blank=True, null=True)
+    show_video = BooleanField(default=True)
+
+    @staticmethod
+    def get_practice_set():
+        """
+        Get exercises that either:
+        1. Have never been attempted
+        2. Were last attempted incorrectly
+        3. Were last attempted more than rest_interval minutes ago
+        Return them in random order.
+        """
+        before_rest_interval = datetime.now(ZoneInfo("UTC")) - timedelta(minutes=1)
+        latest_attempt = ExerciseAttempt.objects.filter(
+            exercise=OuterRef('pk')
+            ).order_by('-timestamp').values('is_correct')[:1]
+
+        return Exercise.objects.annotate(
+            last_attempt_time=Max('exerciseattempt__timestamp'),
+            last_attempt_correct=Subquery(latest_attempt)
+        ).filter(
+            Q(exerciseattempt__isnull=True) | # Never attempted
+            Q(last_attempt_correct=False) | # Last attempt was incorrect
+            Q(last_attempt_time__lt=before_rest_interval) # Last attempt was more than one minute ago
+        ).distinct().order_by('?')  # Random order
 
     def __str__(self):
         return f"{self.type} for clip {self.youtube_clip}"
 
-class Lesson(models.Model):
-    number = models.IntegerField()
-    title = models.CharField(max_length=255)
-    exercises = models.ManyToManyField(Exercise)
+class Lesson(Model):
+    number = IntegerField()
+    title = CharField(max_length=255)
+    exercises = ManyToManyField(Exercise)
 
     def __str__(self):
         return f"#{self.number} {self.title}"
 
-class ExerciseAttempt(models.Model):
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    user_answer = models.TextField()
-    is_correct = models.BooleanField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+class ExerciseAttempt(Model):
+    exercise = ForeignKey(Exercise, on_delete=CASCADE)
+    user_answer = TextField()
+    is_correct = BooleanField()
+    timestamp = DateTimeField(auto_now_add=True)
+    user = ForeignKey(User, on_delete=CASCADE)
 
     def __str__(self):
         return f"{self.exercise} at {self.timestamp}"
