@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from .models import Exercise, ExerciseAttempt
+from .utils import loose_str_compare
 
 def get_exercise_context(exercise: Exercise):
     return {
@@ -64,10 +65,6 @@ def current_exercise(request: HttpRequest):
     context = get_exercise_context(exercises.first())
     template = template_mapping.get(context['type'])
     return render(request, template, context)
-
-def loose_str_compare(a: str, b: str) -> bool:
-    """Compare two strings loosely, ignoring case and whitespace and punctuation."""
-    return ''.join(e for e in a if e.isalnum()).lower() == ''.join(e for e in b if e.isalnum()).lower()
 
 def submit_answer(request: HttpRequest):
     """Handle submission of an exercise answer."""
