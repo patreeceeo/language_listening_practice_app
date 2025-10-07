@@ -58,6 +58,9 @@
       const correctAnswer = `{{ correct_answer }}`;
       const diffResult = document.getElementById('Transcibe_diffResult');
 
+      // Set the hidden input value
+      document.getElementById('Exercise_answerInput').value = userInput;
+
       if (this.normalize(userInput) === this.normalize(correctAnswer)) {
         diffResult.innerHTML = '<div class="p-4 bg-green-100 text-green-800 rounded-lg">Correct! Well done.</div>';
       } else {
@@ -65,6 +68,7 @@
       }
       this.textarea.disabled = true;
       document.getElementById('Transcribe_checkButton').classList.add('hidden');
+
       Exercise.showNextButton();
     }
   };

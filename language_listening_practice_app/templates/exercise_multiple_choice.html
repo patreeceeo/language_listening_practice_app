@@ -4,7 +4,7 @@
 <h3>{{ question }}</h3>
 
 <div id="MultipleChoice_choicesContainer" class="space-y-3 mb-6">
-  {% for choice in choices %}
+  {% for choice in answers %}
   <button
       class="w-full text-left border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition"
       onclick="ExerciseMultipleChoice.selectChoice(event, '{{ choice }}')"
@@ -52,6 +52,9 @@
           } else {
             resultDiv.innerHTML = '<div class="p-4 bg-red-100 text-red-800 rounded-lg">Incorrect. The correct answer is: ' + this.correctAnswer + '</div>';
           }
+
+          // Set the hidden input value
+          document.getElementById('Exercise_answerInput').value = choice;
 
           Exercise.showNextButton();
         }

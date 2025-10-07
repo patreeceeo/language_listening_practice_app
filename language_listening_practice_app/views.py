@@ -1,54 +1,27 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpRequest
 from django.shortcuts import render
 from django.urls import reverse
 
-exercise_data = [
-    {
-        'type': 'shadow',
-        'is_new': True,
-        'lesson_number': 3,
-        'lesson_title': 'The Art of Japanese',
-        'progress_percentage': 33,
-        'exercise_number': 33,
-        'total_exercises': 100,
-        'youtube_video_id': 'IJEn-9nAFQE',
-        'start_seconds': 84.7,
-        'end_seconds': 92,
-    },
-    {
-        'type': 'transcribe',
-        'is_new': True,
-        'lesson_number': 3,
-        'lesson_title': 'The Art of Japanese',
-        'progress_percentage': 33,
-        'exercise_number': 33,
-        'total_exercises': 100,
-        'youtube_video_id': 'IJEn-9nAFQE',
-        'start_seconds': 84.7,
-        'end_seconds': 92,
-        'correct_answer': "どういうおんがくをきくの? すきなおんがくはろっく。",
-    },
-    {
-        'type': 'multiple_choice',
-        'is_new': True,
-        'lesson_number': 3,
-        'lesson_title': 'The Art of Japanese',
-        'progress_percentage': 33,
-        'exercise_number': 33,
-        'total_exercises': 100,
-        'youtube_video_id': 'IJEn-9nAFQE',
-        'start_seconds': 84.7,
-        'end_seconds': 92,
-        'question': "What is the capital of France?",
-        'choices': ["Berlin", "Madrid", "Paris", "Rome"],
-        'correct_answer': "Paris",
-    },
-]
+from .models import Exercise, ExerciseAttempt
 
-data = {
-    'current_exercise': 0,
-    'exercises': exercise_data,
-}
+def get_exercise_context(exercise: Exercise):
+    return {
+        'exercise_id': exercise.id,
+        'type': exercise.type,
+        'is_new': True,  # Placeholder, implement logic to check if user has seen this exercise
+        'lesson_number': 1,  # Placeholder, implement logic to get lesson number
+        'lesson_title': "Sample Lesson",  # Placeholder, implement logic to get lesson title
+        'progress_percentage': 0,  # Placeholder, implement logic to calculate progress
+        'exercise_number': 1,  # Placeholder, implement logic to get current exercise number
+        'total_exercises': Exercise.objects.count(),  # Total exercises in the system
+        'youtube_video_id': exercise.youtube_clip.video_id,
+        'start_seconds': exercise.youtube_clip.start_seconds,
+        'end_seconds': exercise.youtube_clip.end_seconds,
+        'show_video': exercise.show_video,
+        'question': exercise.question,
+        'answers': exercise.answers,
+        'correct_answer': exercise.correct_answer,
+    }
 
 template_mapping = {
     'shadow': 'exercise_shadow.html',
@@ -56,18 +29,29 @@ template_mapping = {
     'multiple_choice': 'exercise_multiple_choice.html',
 }
 
-def current_exercise(request):
+def current_exercise(request: HttpRequest):
     """Display the current exercise page."""
-    exercise_number = data['current_exercise']
+    # Get first exercise that doesn't have an attempt
+    exercise = Exercise.objects.filter(exerciseattempt__isnull=True).first()
 
-    if(exercise_number == len(data['exercises'])):
+    if(exercise == None):
         return render(request, 'all_done.html')
     else:
-        context = data['exercises'][exercise_number]
+        context = get_exercise_context(exercise)
         return render(request, template_mapping[context['type']], context)
 
 
-def submit_answer(request):
-    data['current_exercise'] += 1
+def submit_answer(request: HttpRequest):
+    """Handle submission of an exercise answer."""
+    exercise_id = request.POST.get('exercise_id')
+    exercise = Exercise.objects.get(id=exercise_id)
+    answer = request.POST.get('answer') if exercise.type != 'shadow' else '';
+    is_correct = (answer == exercise.correct_answer) if exercise.type != 'shadow' else True
+    attempt = ExerciseAttempt(
+            exercise=exercise,
+            user_answer=answer,
+            is_correct=is_correct
+    )
+    attempt.save()
     return HttpResponseRedirect(reverse("current_exercise"))
 
