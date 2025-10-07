@@ -3,7 +3,6 @@ from django.shortcuts import render
 from django.urls import reverse
 
 from .models import Exercise, ExerciseAttempt
-from .utils import loose_str_compare
 
 def get_exercise_context(exercise: Exercise):
     return {
@@ -46,7 +45,7 @@ def submit_answer(request: HttpRequest):
     exercise_id = request.POST.get('exercise_id')
     exercise = Exercise.objects.get(id=exercise_id)
     answer = request.POST.get('answer') if exercise.type != 'shadow' else '';
-    is_correct = loose_str_compare(answer, exercise.correct_answer) if exercise.type != 'shadow' else True
+    is_correct = exercise.is_correct(answer)
 
     print(f"""
           User answered:  '{answer}'

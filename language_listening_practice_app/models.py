@@ -6,6 +6,7 @@ from django.db.models import (
 from django.contrib.auth.models import User
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from .utils import loose_str_compare
 
 class YouTubeClip(Model):
     video_id = CharField(max_length=20)
@@ -50,6 +51,14 @@ class Exercise(Model):
             Q(last_attempt_correct=False) | # Last attempt was incorrect
             Q(last_attempt_time__lt=before_rest_interval) # Last attempt was more than one minute ago
         ).distinct().order_by('?')  # Random order
+
+    def is_correct(self, answer: str) -> bool:
+        """Check if the provided answer is correct."""
+        if self.type == 'shadow':
+            return True
+
+        return loose_str_compare(answer, self.correct_answer)
+
 
     def __str__(self):
         return f"{self.type} for clip {self.youtube_clip}"
