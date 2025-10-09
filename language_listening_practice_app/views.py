@@ -1,6 +1,9 @@
 from django.http import HttpResponseRedirect, HttpRequest
 from django.shortcuts import render
 from django.urls import reverse
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
 
 from .models import Exercise, ExerciseAttempt
 
@@ -29,6 +32,18 @@ template_mapping = {
     'multiple_choice': 'exercise_multiple_choice.html',
 }
 
+@login_required(login_url='/accounts/login/')
+def profile(request: HttpRequest):
+    """Display the user profile page."""
+    user = request.user
+    attempts = ExerciseAttempt.objects.filter(user=user).order_by('-timestamp')[:10]
+    context = {
+        'username': user.username,
+        'attempts': attempts,
+    }
+    return render(request, 'profile.html', context)
+
+@login_required(login_url='/accounts/login/')
 def current_exercise(request: HttpRequest):
     """Display the current exercise page."""
     exercises = Exercise.get_practice_set()
@@ -40,6 +55,7 @@ def current_exercise(request: HttpRequest):
     template = template_mapping.get(context['type'])
     return render(request, template, context)
 
+@login_required(login_url='/accounts/login/')
 def submit_answer(request: HttpRequest):
     """Handle submission of an exercise answer."""
     exercise_id = request.POST.get('exercise_id')
@@ -56,7 +72,8 @@ def submit_answer(request: HttpRequest):
     attempt = ExerciseAttempt(
             exercise=exercise,
             user_answer=answer,
-            is_correct=is_correct
+            is_correct=is_correct,
+            user=request.user
     )
     attempt.save()
     return HttpResponseRedirect(reverse("current_exercise"))
