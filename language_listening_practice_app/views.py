@@ -8,12 +8,13 @@ from django.contrib.auth.decorators import login_required
 from .models import Exercise, ExerciseAttempt
 
 def get_exercise_context(exercise: Exercise):
+    attempts = ExerciseAttempt.objects.filter(exercise=exercise)
     return {
         'exercise_id': exercise.id,
         'type': exercise.type,
-        'is_new': True,  # Placeholder, implement logic to check if user has seen this exercise
+        'is_new': not attempts.exists(),
         'lesson_number': 1,  # Placeholder, implement logic to get lesson number
-        'lesson_title': "Sample Lesson",  # Placeholder, implement logic to get lesson title
+        'lesson_title': "The Art of Japanese",  # Placeholder, implement logic to get lesson title
         'progress_percentage': 0,  # Placeholder, implement logic to calculate progress
         'exercise_number': 1,  # Placeholder, implement logic to get current exercise number
         'total_exercises': Exercise.objects.count(),  # Total exercises in the system
