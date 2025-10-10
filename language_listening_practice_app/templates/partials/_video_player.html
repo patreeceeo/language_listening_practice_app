@@ -29,7 +29,11 @@
   const VideoPlayerPartial = {
     player: null,
     playerReady: false,
-    timeoutId: null,
+    videoParams: {
+      videoId: "{{ youtube_video_id }}",
+      startSeconds: {{ start_seconds }},
+      endSeconds: {{ end_seconds }}
+    },
     init() {
       this.player = new YT.Player('player', {
         playerVars: {
@@ -38,10 +42,16 @@
         },
         events: {
           onReady: this.onPlayerReady.bind(this),
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.ENDED) {
+              this.playVideo();
+            }
+          }
         }
       });
 
       this.player.getIframe().classList.add('w-full', 'h-full', 'rounded-lg', 'shadow-lg');
+
     },
     playVideo() {
       if(this.playerReady) {
@@ -49,16 +59,8 @@
         document.getElementById('VideoPlayer_playButton').classList.add('hidden');
         document.getElementById('VideoPlayer_stopButton').classList.remove('hidden');
 
-        this.player.loadVideoById({
-          videoId:"{{ youtube_video_id }}",
-          startSeconds:{{ start_seconds }},
-          endSeconds:{{ end_seconds }}
-        });
-
-        // Loop video
-        this.timeoutId = setTimeout(() => {
-          this.playVideo();
-        }, ({{end_seconds}} - {{start_seconds}}) * 1000);
+        // Have to load the video each time to respect startSeconds
+        this.player.loadVideoById(this.videoParams);
       }
     },
     stopVideo() {
@@ -67,18 +69,11 @@
       document.getElementById('VideoPlayer_stopButton').classList.add('hidden');
 
       // Cue an invalid video to stop playback
-      this.player.cueVideoById({
-        videoId: "",
-      });
-
-      // Clear the timeout to stop looping
-      if (this.timeoutId) {
-        clearTimeout(this.timeoutId);
-        this.timeoutId = null;
-      }
+      this.player.cueVideoById(this.videoParams);
     },
     onPlayerReady(event) {
       this.playerReady = true;
+      this.player.cueVideoById(this.videoParams);
     }
   };
 </script>
