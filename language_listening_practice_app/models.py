@@ -3,10 +3,9 @@ from django.db.models import (
     ManyToManyField, DateTimeField, JSONField, CASCADE, Q, OuterRef, Subquery, Max,
     IntegerField
     )
+from django.db.models.query import QuerySet
 from django.contrib.auth.models import User
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-from .utils import loose_str_compare
+from .utils import loose_str_compare, relative_datetime
 
 class YouTubeClip(Model):
     video_id = CharField(max_length=20)
@@ -30,7 +29,7 @@ class Exercise(Model):
     show_video = BooleanField(default=True)
 
     @staticmethod
-    def get_practice_set():
+    def get_practice_set(max_last_attempt_time = None) -> QuerySet["Exercise"]:
         """
         Get exercises that either:
         1. Have never been attempted
@@ -38,7 +37,8 @@ class Exercise(Model):
         3. Were last attempted more than rest_interval minutes ago
         Return them in random order.
         """
-        before_rest_interval = datetime.now(ZoneInfo("UTC")) - timedelta(minutes=1)
+        if max_last_attempt_time is None:
+            max_last_attempt_time = relative_datetime()
         latest_attempt = ExerciseAttempt.objects.filter(
             exercise=OuterRef('pk')
             ).order_by('-timestamp').values('is_correct')[:1]
@@ -49,7 +49,7 @@ class Exercise(Model):
         ).filter(
             Q(exerciseattempt__isnull=True) | # Never attempted
             Q(last_attempt_correct=False) | # Last attempt was incorrect
-            Q(last_attempt_time__lt=before_rest_interval) # Last attempt was more than one minute ago
+            Q(last_attempt_time__lt=max_last_attempt_time)
         ).distinct().order_by('?')  # Random order
 
     def is_correct(self, answer: str) -> bool:
