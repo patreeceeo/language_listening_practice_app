@@ -29,7 +29,7 @@ class Exercise(Model):
     show_video = BooleanField(default=True)
 
     @staticmethod
-    def get_practice_set(max_last_attempt_time = None) -> QuerySet["Exercise"]:
+    def get_practice_set(user: User, max_last_attempt_time = None) -> QuerySet["Exercise"]:
         """
         Get exercises that either:
         1. Have never been attempted
@@ -39,15 +39,22 @@ class Exercise(Model):
         """
         if max_last_attempt_time is None:
             max_last_attempt_time = relative_datetime()
+
         latest_attempt = ExerciseAttempt.objects.filter(
             exercise=OuterRef('pk')
             ).order_by('-timestamp').values('is_correct')[:1]
 
+        attempts_by_user = ExerciseAttempt.objects.filter(
+            user=user,
+            exercise=OuterRef('pk')
+        )
+
         return Exercise.objects.annotate(
             last_attempt_time=Max('exerciseattempt__timestamp'),
-            last_attempt_correct=Subquery(latest_attempt)
+            last_attempt_correct=Subquery(latest_attempt),
+            attempted_by_user=Subquery(attempts_by_user.values('id')[:1])
         ).filter(
-            Q(exerciseattempt__isnull=True) | # Never attempted
+            Q(attempted_by_user__isnull=True) | # Never attempted
             Q(last_attempt_correct=False) | # Last attempt was incorrect
             Q(last_attempt_time__lt=max_last_attempt_time)
         ).distinct().order_by('?')  # Random order
