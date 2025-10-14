@@ -3,16 +3,16 @@ from django.contrib.auth.models import User
 from .models import Exercise, YouTubeClip, ExerciseAttempt
 from .utils import relative_datetime
 
-_next_user_id = 0
-
 class ExercisePracticeSetTestCase(TestCase):
+    def setUp(self):
+        self.next_user_id = 0
+
     def _create_youtube_clip(self):
         return YouTubeClip.objects.create(video_id='abc123', start_seconds=0, end_seconds=10)
 
     def _create_user(self):
-        global _next_user_id
-        id = _next_user_id
-        _next_user_id += 1
+        id = self.next_user_id
+        self.next_user_id += 1
         return User.objects.create_user(username=f'user{id}', password='12345')
 
     def test_never_attempted(self):
