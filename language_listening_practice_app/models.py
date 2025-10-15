@@ -26,6 +26,8 @@ class Exercise(Model):
     question = TextField(blank=True, null=True)
     answers = JSONField(blank=True, null=True)  # For multiple choice
     correct_answer = CharField(max_length=255, blank=True, null=True)
+    explanation = TextField(blank=True, null=True)
+    """correct answer explanation"""
     show_video = BooleanField(default=True)
 
     @staticmethod
