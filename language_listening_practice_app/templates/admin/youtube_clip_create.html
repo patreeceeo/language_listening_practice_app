@@ -73,212 +73,235 @@
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-let player = null;
-let playerReady = false;
-let videoId = null;
-let startSeconds = null;
-let endSeconds = null;
-let loopInterval = null;
-let state = 'idle'; // idle, loaded, start_set, end_set, previewing
+document.addEventListener('DOMContentLoaded', () => YouTubeClipCreator.init());
 
 // YouTube API ready callback
 function onYouTubeIframeAPIReady() {
   console.log('YouTube API ready');
 }
 
-// Parse video ID from URL or direct ID
-function parseVideoId(input) {
-  input = input.trim();
+const YouTubeClipCreator = {
+  player: null,
+  playerReady: false,
+  videoId: null,
+  startSeconds: null,
+  endSeconds: null,
+  loopInterval: null,
+  state: 'idle', // idle, loaded, start_set, end_set, previewing
 
-  // Direct video ID (11 characters)
-  if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
-    return input;
-  }
+  // Cached DOM elements
+  elements: {},
 
-  // Various YouTube URL formats
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-  ];
+  init() {
+    // Cache all DOM elements
+    this.elements = {
+      videoInput: document.getElementById('video-input'),
+      loadVideoBtn: document.getElementById('load-video-btn'),
+      playerContainer: document.getElementById('player-container'),
+      controls: document.getElementById('controls'),
+      statusMessage: document.getElementById('status-message'),
+      timeDisplay: document.getElementById('time-display'),
+      setStartBtn: document.getElementById('set-start-btn'),
+      setEndBtn: document.getElementById('set-end-btn'),
+      startOverBtn: document.getElementById('start-over-btn'),
+      saveClipBtn: document.getElementById('save-clip-btn'),
+      formVideoId: document.getElementById('form-video-id'),
+      formStartSeconds: document.getElementById('form-start-seconds'),
+      formEndSeconds: document.getElementById('form-end-seconds'),
+      clipForm: document.getElementById('clip-form')
+    };
 
-  for (const pattern of patterns) {
-    const match = input.match(pattern);
-    if (match) return match[1];
-  }
+    // Attach event listeners
+    this.elements.loadVideoBtn.addEventListener('click', () => this.onLoadVideo());
+    this.elements.setStartBtn.addEventListener('click', () => this.onSetStart());
+    this.elements.setEndBtn.addEventListener('click', () => this.onSetEnd());
+    this.elements.startOverBtn.addEventListener('click', () => this.onStartOver());
+    this.elements.saveClipBtn.addEventListener('click', () => this.onSaveClip());
 
-  return null;
-}
+    // Start time display updates
+    setInterval(() => this.updateTimeDisplay(), 100);
+  },
 
-// Initialize player
-function initPlayer() {
-  stopPreview();
-  if (player) {
-    player.destroy();
-  }
+  parseVideoId(input) {
+    input = input.trim();
 
-  player = new YT.Player('player', {
-    videoId: videoId,
-    playerVars: {
-      playsinline: 1,
-      controls: 1,
-    },
-    events: {
-      onReady: onPlayerReady,
-      onStateChange: onPlayerStateChange
+    // Direct video ID (11 characters)
+    if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
+      return input;
     }
-  });
-}
 
-function onPlayerReady(event) {
-  playerReady = true;
-  document.getElementById('player-container').style.display = 'block';
-  document.getElementById('controls').style.display = 'block';
-  document.getElementById('set-start-btn').style.display = 'inline-block';
-  updateStatus('Video loaded. Play the video and click "Set Start Time" when ready.');
-  state = 'loaded';
-}
+    // Various YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    ];
 
-function onPlayerStateChange(event) {
-  if (state === 'previewing' && event.data === YT.PlayerState.ENDED) {
-    // Loop back to start
-    player.seekTo(startSeconds);
-    player.playVideo();
-  }
-}
-
-function updateStatus(message) {
-  document.getElementById('status-message').textContent = message;
-}
-
-function updateTimeDisplay() {
-  if (playerReady && player.getCurrentTime) {
-    const currentTime = player.getCurrentTime().toFixed(2);
-    let display = `Current time: ${currentTime}s`;
-    if (startSeconds !== null) {
-      display += ` | Start: ${startSeconds.toFixed(2)}s`;
+    for (const pattern of patterns) {
+      const match = input.match(pattern);
+      if (match) return match[1];
     }
-    if (endSeconds !== null) {
-      display += ` | End: ${endSeconds.toFixed(2)}s`;
+
+    return null;
+  },
+
+  initPlayer() {
+    this.stopPreview();
+    if (this.player) {
+      this.player.destroy();
     }
-    document.getElementById('time-display').textContent = display;
-  }
-}
 
-// Start time display updates
-setInterval(updateTimeDisplay, 100);
+    this.player = new YT.Player('player', {
+      videoId: this.videoId,
+      playerVars: {
+        playsinline: 1,
+        controls: 1,
+      },
+      events: {
+        onReady: this.onPlayerReady.bind(this),
+        onStateChange: this.onPlayerStateChange.bind(this)
+      }
+    });
+  },
 
-// Load video button
-document.getElementById('load-video-btn').addEventListener('click', () => {
-  const input = document.getElementById('video-input').value;
-  videoId = parseVideoId(input);
+  onPlayerReady(event) {
+    this.playerReady = true;
+    this.elements.playerContainer.style.display = 'block';
+    this.elements.controls.style.display = 'block';
+    this.elements.setStartBtn.style.display = 'inline-block';
+    this.updateStatus('Video loaded. Play the video and click "Set Start Time" when ready.');
+    this.state = 'loaded';
+  },
 
-  if (!videoId) {
-    alert('Invalid YouTube video ID or URL');
-    return;
-  }
-
-  // Reset all state
-  startSeconds = null;
-  endSeconds = null;
-  state = 'idle';
-
-  // Hide all buttons
-  document.getElementById('set-start-btn').style.display = 'none';
-  document.getElementById('set-end-btn').style.display = 'none';
-  document.getElementById('start-over-btn').style.display = 'none';
-  document.getElementById('save-clip-btn').style.display = 'none';
-
-  // Clear messages
-  updateStatus('');
-  document.getElementById('time-display').textContent = '';
-
-  initPlayer();
-});
-
-// Set start time
-document.getElementById('set-start-btn').addEventListener('click', () => {
-  if (!playerReady) return;
-
-  startSeconds = player.getCurrentTime();
-  updateStatus(`Start time set to ${startSeconds.toFixed(2)}s. Now play to your desired end point and click "Set End Time".`);
-  document.getElementById('set-start-btn').style.display = 'none';
-  document.getElementById('set-end-btn').style.display = 'inline-block';
-  state = 'start_set';
-});
-
-// Set end time
-document.getElementById('set-end-btn').addEventListener('click', () => {
-  if (!playerReady || startSeconds === null) return;
-
-  endSeconds = player.getCurrentTime();
-
-  if (endSeconds <= startSeconds) {
-    alert('End time must be after start time');
-    return;
-  }
-
-  updateStatus(`Clip set! Preview playing from ${startSeconds.toFixed(2)}s to ${endSeconds.toFixed(2)}s. Click "Save Clip" when ready.`);
-  document.getElementById('set-end-btn').style.display = 'none';
-  document.getElementById('start-over-btn').style.display = 'inline-block';
-  document.getElementById('save-clip-btn').style.display = 'inline-block';
-
-  state = 'previewing';
-  startPreview();
-});
-
-// Start preview loop
-function startPreview() {
-  player.seekTo(startSeconds);
-  player.playVideo();
-
-  // Check if we need to loop
-  if (loopInterval) clearInterval(loopInterval);
-  loopInterval = setInterval(() => {
-    if (playerReady && player.getCurrentTime() >= endSeconds) {
-      player.seekTo(startSeconds);
+  onPlayerStateChange(event) {
+    if (this.state === 'previewing' && event.data === YT.PlayerState.ENDED) {
+      // Loop back to start
+      this.player.seekTo(this.startSeconds);
+      this.player.playVideo();
     }
-  }, 100);
-}
+  },
 
-function stopPreview() {
-  if (loopInterval) {
-    clearInterval(loopInterval);
-    loopInterval = null;
+  updateStatus(message) {
+    this.elements.statusMessage.textContent = message;
+  },
+
+  updateTimeDisplay() {
+    if (this.playerReady && this.player.getCurrentTime) {
+      const currentTime = this.player.getCurrentTime().toFixed(2);
+      let display = `Current time: ${currentTime}s`;
+      if (this.startSeconds !== null) {
+        display += ` | Start: ${this.startSeconds.toFixed(2)}s`;
+      }
+      if (this.endSeconds !== null) {
+        display += ` | End: ${this.endSeconds.toFixed(2)}s`;
+      }
+      this.elements.timeDisplay.textContent = display;
+    }
+  },
+
+  onLoadVideo() {
+    const input = this.elements.videoInput.value;
+    this.videoId = this.parseVideoId(input);
+
+    if (!this.videoId) {
+      alert('Invalid YouTube video ID or URL');
+      return;
+    }
+
+    // Reset all state
+    this.startSeconds = null;
+    this.endSeconds = null;
+    this.state = 'idle';
+
+    // Hide all buttons
+    this.elements.setStartBtn.style.display = 'none';
+    this.elements.setEndBtn.style.display = 'none';
+    this.elements.startOverBtn.style.display = 'none';
+    this.elements.saveClipBtn.style.display = 'none';
+
+    // Clear messages
+    this.updateStatus('');
+    this.elements.timeDisplay.textContent = '';
+
+    this.initPlayer();
+  },
+
+  onSetStart() {
+    if (!this.playerReady) return;
+
+    this.startSeconds = this.player.getCurrentTime();
+    this.updateStatus(`Start time set to ${this.startSeconds.toFixed(2)}s. Now play to your desired end point and click "Set End Time".`);
+    this.elements.setStartBtn.style.display = 'none';
+    this.elements.setEndBtn.style.display = 'inline-block';
+    this.state = 'start_set';
+  },
+
+  onSetEnd() {
+    if (!this.playerReady || this.startSeconds === null) return;
+
+    this.endSeconds = this.player.getCurrentTime();
+
+    if (this.endSeconds <= this.startSeconds) {
+      alert('End time must be after start time');
+      return;
+    }
+
+    this.updateStatus(`Clip set! Preview playing from ${this.startSeconds.toFixed(2)}s to ${this.endSeconds.toFixed(2)}s. Click "Save Clip" when ready.`);
+    this.elements.setEndBtn.style.display = 'none';
+    this.elements.startOverBtn.style.display = 'inline-block';
+    this.elements.saveClipBtn.style.display = 'inline-block';
+
+    this.state = 'previewing';
+    this.startPreview();
+  },
+
+  startPreview() {
+    this.player.seekTo(this.startSeconds);
+    this.player.playVideo();
+
+    // Check if we need to loop
+    this.stopPreview();
+    this.loopInterval = setInterval(() => {
+      if (this.playerReady && this.player.getCurrentTime() >= this.endSeconds) {
+        this.player.seekTo(this.startSeconds);
+      }
+    }, 100);
+  },
+
+  stopPreview() {
+    if (this.loopInterval) {
+      clearInterval(this.loopInterval);
+      this.loopInterval = null;
+    }
+  },
+
+  onStartOver() {
+    this.stopPreview();
+
+    this.startSeconds = null;
+    this.endSeconds = null;
+    this.player.seekTo(0);
+    this.player.pauseVideo();
+
+    this.elements.setStartBtn.style.display = 'inline-block';
+    this.elements.setEndBtn.style.display = 'none';
+    this.elements.startOverBtn.style.display = 'none';
+    this.elements.saveClipBtn.style.display = 'none';
+
+    this.updateStatus('Reset. Play the video and click "Set Start Time" when ready.');
+    this.state = 'loaded';
+  },
+
+  onSaveClip() {
+    if (!this.videoId || this.startSeconds === null || this.endSeconds === null) {
+      alert('Please set both start and end times');
+      return;
+    }
+
+    this.elements.formVideoId.value = this.videoId;
+    this.elements.formStartSeconds.value = this.startSeconds;
+    this.elements.formEndSeconds.value = this.endSeconds;
+    this.elements.clipForm.submit();
   }
-}
-
-// Start over
-document.getElementById('start-over-btn').addEventListener('click', () => {
-  if (loopInterval) {
-    clearInterval(loopInterval);
-    loopInterval = null;
-  }
-
-  startSeconds = null;
-  endSeconds = null;
-  player.seekTo(0);
-  player.pauseVideo();
-
-  document.getElementById('set-start-btn').style.display = 'inline-block';
-  document.getElementById('set-end-btn').style.display = 'none';
-  document.getElementById('start-over-btn').style.display = 'none';
-  document.getElementById('save-clip-btn').style.display = 'none';
-
-  updateStatus('Reset. Play the video and click "Set Start Time" when ready.');
-  state = 'loaded';
-});
-
-// Save clip
-document.getElementById('save-clip-btn').addEventListener('click', () => {
-  if (!videoId || startSeconds === null || endSeconds === null) {
-    alert('Please set both start and end times');
-    return;
-  }
-
-  document.getElementById('form-video-id').value = videoId;
-  document.getElementById('form-start-seconds').value = startSeconds;
-  document.getElementById('form-end-seconds').value = endSeconds;
-  document.getElementById('clip-form').submit();
-});
+};
 </script>
 {% endblock %}
