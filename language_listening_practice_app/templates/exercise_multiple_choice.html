@@ -20,6 +20,7 @@
       const ExerciseMultipleChoice = {
         answered: false,
         correctAnswer: '{{ correct_answer }}',
+        explanation: '{{ explanation|default:"" }}',
 
         selectChoice(event, choice) {
           event.preventDefault();
@@ -46,8 +47,10 @@
             }
           });
 
-          // Show result message
-          if (choice === this.correctAnswer) {
+          // Show explanation or result message
+          if (this.explanation) {
+            resultDiv.innerHTML = '<div class="p-4 bg-blue-100 text-blue-900 rounded-lg">' + this.explanation + '</div>';
+          } else if (choice === this.correctAnswer) {
             resultDiv.innerHTML = '<div class="p-4 bg-green-100 text-green-800 rounded-lg">Correct! Well done.</div>';
           } else {
             resultDiv.innerHTML = '<div class="p-4 bg-red-100 text-red-800 rounded-lg">Incorrect. The correct answer is: ' + this.correctAnswer + '</div>';

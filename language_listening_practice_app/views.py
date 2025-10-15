@@ -27,6 +27,7 @@ def get_exercise_context(exercise: Exercise, total_exercises: int, exercise_inde
         'question': exercise.question,
         'answers': exercise.answers,
         'correct_answer': exercise.correct_answer,
+        'explanation': exercise.explanation,
     }
 
 template_mapping = {
