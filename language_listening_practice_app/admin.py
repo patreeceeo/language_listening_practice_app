@@ -8,7 +8,7 @@ from .models import YouTubeClip, Exercise, ExerciseAttempt
 
 @admin.register(YouTubeClip)
 class YouTubeClipAdmin(admin.ModelAdmin):
-    list_display = ('video_id', 'start_seconds', 'end_seconds')
+    list_display = ('title', 'start_seconds', 'end_seconds', 'video_id')
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
@@ -27,11 +27,13 @@ class YouTubeClipAdmin(admin.ModelAdmin):
             video_id = request.POST.get('video_id')
             start_seconds = float(request.POST.get('start_seconds'))
             end_seconds = float(request.POST.get('end_seconds'))
+            title = request.POST.get('title', '')
 
             clip = YouTubeClip.objects.create(
                 video_id=video_id,
                 start_seconds=start_seconds,
-                end_seconds=end_seconds
+                end_seconds=end_seconds,
+                title=title if title else None
             )
             return redirect('admin:language_listening_practice_app_youtubeclip_change', clip.id)
 

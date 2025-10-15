@@ -11,9 +11,10 @@ class YouTubeClip(Model):
     video_id = CharField(max_length=20)
     start_seconds = FloatField()
     end_seconds = FloatField()
+    title = CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.video_id} ({self.start_seconds}-{self.end_seconds})"
+        return f"{self.title or self.video_id} ({self.start_seconds}-{self.end_seconds})"
 
 class Exercise(Model):
     TYPES = {
