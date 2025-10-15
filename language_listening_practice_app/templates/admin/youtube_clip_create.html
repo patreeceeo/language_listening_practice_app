@@ -8,10 +8,28 @@
   <h1>{% if is_edit %}Edit{% else %}Create{% endif %} YouTube Clip</h1>
 
   <div class="module" style="max-width: 900px;">
+    <!-- Existing Video Dropdown -->
+    <div class="form-row" style="margin-bottom: 20px;">
+      <div>
+        <label for="existing-video-select">Select existing video:</label>
+        <select
+          id="existing-video-select"
+          style="width: 100%; padding: 8px; font-size: 14px; height: 40px;"
+        >
+          <option value="">-- Select existing video --</option>
+          {% for video in existing_videos %}
+          <option value="{{ video.video_id }}">
+            {% if video.title %}{{ video.title }}{% else %}{{ video.video_id }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
     <!-- Video ID Input -->
     <div class="form-row" style="margin-bottom: 20px;">
       <div>
-        <label for="video-input">YouTube Video ID or URL:</label>
+        <label for="video-input">Or enter new video ID or URL:</label>
         <input
           type="text"
           id="video-input"
@@ -123,6 +141,7 @@ const YouTubeClipCreator = {
   init() {
     // Cache all DOM elements
     this.elements = {
+      existingVideoSelect: document.getElementById('existing-video-select'),
       videoInput: document.getElementById('video-input'),
       loadVideoBtn: document.getElementById('load-video-btn'),
       titleContainer: document.getElementById('title-container'),
@@ -143,6 +162,8 @@ const YouTubeClipCreator = {
     };
 
     // Attach event listeners
+    this.elements.existingVideoSelect.addEventListener('change', () => this.onExistingVideoSelect());
+    this.elements.videoInput.addEventListener('input', () => this.onVideoInputChange());
     this.elements.loadVideoBtn.addEventListener('click', () => this.onLoadVideo());
     this.elements.setStartBtn.addEventListener('click', () => this.onSetStart());
     this.elements.setEndBtn.addEventListener('click', () => this.onSetEnd());
@@ -261,6 +282,19 @@ const YouTubeClipCreator = {
       }
       this.elements.timeDisplay.textContent = display;
     }
+  },
+
+  onExistingVideoSelect() {
+    const selectedVideoId = this.elements.existingVideoSelect.value;
+    if (selectedVideoId) {
+      this.elements.videoInput.value = selectedVideoId;
+      this.onLoadVideo();
+    }
+  },
+
+  onVideoInputChange() {
+    // Clear dropdown selection when user manually types
+    this.elements.existingVideoSelect.value = '';
   },
 
   async fetchVideoTitle() {

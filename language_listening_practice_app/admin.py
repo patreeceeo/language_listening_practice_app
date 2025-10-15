@@ -10,6 +10,16 @@ from .models import YouTubeClip, Exercise, ExerciseAttempt
 class YouTubeClipAdmin(admin.ModelAdmin):
     list_display = ('title', 'start_seconds', 'end_seconds', 'video_id')
 
+    def get_unique_videos(self):
+        """Get one video per unique video_id, most recent first."""
+        seen_video_ids = set()
+        existing_videos = []
+        for clip in YouTubeClip.objects.order_by('-id').values('video_id', 'title'):
+            if clip['video_id'] not in seen_video_ids:
+                existing_videos.append(clip)
+                seen_video_ids.add(clip['video_id'])
+        return existing_videos
+
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
         extra_context['create_clip_url'] = 'create-clip/'
@@ -51,6 +61,7 @@ class YouTubeClipAdmin(admin.ModelAdmin):
             'site_title': admin.site.site_title,
             'opts': self.model._meta,
             'is_edit': False,
+            'existing_videos': self.get_unique_videos(),
         })
 
     def edit_clip_view(self, request, object_id):
@@ -70,6 +81,7 @@ class YouTubeClipAdmin(admin.ModelAdmin):
             'opts': self.model._meta,
             'is_edit': True,
             'clip': clip,
+            'existing_videos': self.get_unique_videos(),
         })
 
 admin.site.register(Exercise)
