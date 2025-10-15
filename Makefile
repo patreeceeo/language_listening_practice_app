@@ -13,3 +13,6 @@ tests:
 
 testdev:
 	find . -name '*.py' | entr python manage.py test
+
+repl:
+	python manage.py shell
