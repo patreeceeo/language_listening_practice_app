@@ -1,6 +1,12 @@
 
 # Developer Guide
 
+Activate virtual environment:
+
+```bash
+$(poetry env activate)
+```
+
 Install the dependencies:
 
 ```bash
