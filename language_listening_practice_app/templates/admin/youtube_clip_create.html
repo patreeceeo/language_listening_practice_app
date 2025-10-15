@@ -1,0 +1,284 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Create YouTube Clip{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Create YouTube Clip</h1>
+
+  <div class="module" style="max-width: 900px;">
+    <!-- Video ID Input -->
+    <div class="form-row" style="margin-bottom: 20px;">
+      <div>
+        <label for="video-input">YouTube Video ID or URL:</label>
+        <input
+          type="text"
+          id="video-input"
+          placeholder="Enter video ID (e.g., dQw4w9WgXcQ) or full URL"
+          style="width: 100%; padding: 8px; font-size: 14px;"
+        >
+        <button
+          type="button"
+          id="load-video-btn"
+          class="button"
+          style="margin-top: 10px;"
+        >
+          Load Video
+        </button>
+      </div>
+    </div>
+
+    <!-- Video Player -->
+    <div id="player-container" style="display: none; margin-bottom: 20px;">
+      <div style="aspect-ratio: 16/9; width: 100%; max-width: 800px;">
+        <div id="player"></div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls" style="display: none;">
+      <div style="margin-bottom: 20px;">
+        <p id="status-message" style="font-weight: bold; color: #417690;"></p>
+        <p id="time-display" style="color: #666;"></p>
+      </div>
+
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" id="set-start-btn" class="button" style="display: none;">
+          Set Start Time
+        </button>
+        <button type="button" id="set-end-btn" class="button" style="display: none;">
+          Set End Time
+        </button>
+        <button type="button" id="start-over-btn" class="button default" style="display: none;">
+          Start Over
+        </button>
+        <button type="button" id="save-clip-btn" class="button" style="display: none;">
+          Save Clip
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden Form -->
+    <form id="clip-form" method="post" style="display: none;">
+      {% csrf_token %}
+      <input type="hidden" name="video_id" id="form-video-id">
+      <input type="hidden" name="start_seconds" id="form-start-seconds">
+      <input type="hidden" name="end_seconds" id="form-end-seconds">
+    </form>
+  </div>
+</div>
+
+<!-- Load YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+let player = null;
+let playerReady = false;
+let videoId = null;
+let startSeconds = null;
+let endSeconds = null;
+let loopInterval = null;
+let state = 'idle'; // idle, loaded, start_set, end_set, previewing
+
+// YouTube API ready callback
+function onYouTubeIframeAPIReady() {
+  console.log('YouTube API ready');
+}
+
+// Parse video ID from URL or direct ID
+function parseVideoId(input) {
+  input = input.trim();
+
+  // Direct video ID (11 characters)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
+    return input;
+  }
+
+  // Various YouTube URL formats
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match) return match[1];
+  }
+
+  return null;
+}
+
+// Initialize player
+function initPlayer() {
+  stopPreview();
+  if (player) {
+    player.destroy();
+  }
+
+  player = new YT.Player('player', {
+    videoId: videoId,
+    playerVars: {
+      playsinline: 1,
+      controls: 1,
+    },
+    events: {
+      onReady: onPlayerReady,
+      onStateChange: onPlayerStateChange
+    }
+  });
+}
+
+function onPlayerReady(event) {
+  playerReady = true;
+  document.getElementById('player-container').style.display = 'block';
+  document.getElementById('controls').style.display = 'block';
+  document.getElementById('set-start-btn').style.display = 'inline-block';
+  updateStatus('Video loaded. Play the video and click "Set Start Time" when ready.');
+  state = 'loaded';
+}
+
+function onPlayerStateChange(event) {
+  if (state === 'previewing' && event.data === YT.PlayerState.ENDED) {
+    // Loop back to start
+    player.seekTo(startSeconds);
+    player.playVideo();
+  }
+}
+
+function updateStatus(message) {
+  document.getElementById('status-message').textContent = message;
+}
+
+function updateTimeDisplay() {
+  if (playerReady && player.getCurrentTime) {
+    const currentTime = player.getCurrentTime().toFixed(2);
+    let display = `Current time: ${currentTime}s`;
+    if (startSeconds !== null) {
+      display += ` | Start: ${startSeconds.toFixed(2)}s`;
+    }
+    if (endSeconds !== null) {
+      display += ` | End: ${endSeconds.toFixed(2)}s`;
+    }
+    document.getElementById('time-display').textContent = display;
+  }
+}
+
+// Start time display updates
+setInterval(updateTimeDisplay, 100);
+
+// Load video button
+document.getElementById('load-video-btn').addEventListener('click', () => {
+  const input = document.getElementById('video-input').value;
+  videoId = parseVideoId(input);
+
+  if (!videoId) {
+    alert('Invalid YouTube video ID or URL');
+    return;
+  }
+
+  // Reset all state
+  startSeconds = null;
+  endSeconds = null;
+  state = 'idle';
+
+  // Hide all buttons
+  document.getElementById('set-start-btn').style.display = 'none';
+  document.getElementById('set-end-btn').style.display = 'none';
+  document.getElementById('start-over-btn').style.display = 'none';
+  document.getElementById('save-clip-btn').style.display = 'none';
+
+  // Clear messages
+  updateStatus('');
+  document.getElementById('time-display').textContent = '';
+
+  initPlayer();
+});
+
+// Set start time
+document.getElementById('set-start-btn').addEventListener('click', () => {
+  if (!playerReady) return;
+
+  startSeconds = player.getCurrentTime();
+  updateStatus(`Start time set to ${startSeconds.toFixed(2)}s. Now play to your desired end point and click "Set End Time".`);
+  document.getElementById('set-start-btn').style.display = 'none';
+  document.getElementById('set-end-btn').style.display = 'inline-block';
+  state = 'start_set';
+});
+
+// Set end time
+document.getElementById('set-end-btn').addEventListener('click', () => {
+  if (!playerReady || startSeconds === null) return;
+
+  endSeconds = player.getCurrentTime();
+
+  if (endSeconds <= startSeconds) {
+    alert('End time must be after start time');
+    return;
+  }
+
+  updateStatus(`Clip set! Preview playing from ${startSeconds.toFixed(2)}s to ${endSeconds.toFixed(2)}s. Click "Save Clip" when ready.`);
+  document.getElementById('set-end-btn').style.display = 'none';
+  document.getElementById('start-over-btn').style.display = 'inline-block';
+  document.getElementById('save-clip-btn').style.display = 'inline-block';
+
+  state = 'previewing';
+  startPreview();
+});
+
+// Start preview loop
+function startPreview() {
+  player.seekTo(startSeconds);
+  player.playVideo();
+
+  // Check if we need to loop
+  if (loopInterval) clearInterval(loopInterval);
+  loopInterval = setInterval(() => {
+    if (playerReady && player.getCurrentTime() >= endSeconds) {
+      player.seekTo(startSeconds);
+    }
+  }, 100);
+}
+
+function stopPreview() {
+  if (loopInterval) {
+    clearInterval(loopInterval);
+    loopInterval = null;
+  }
+}
+
+// Start over
+document.getElementById('start-over-btn').addEventListener('click', () => {
+  if (loopInterval) {
+    clearInterval(loopInterval);
+    loopInterval = null;
+  }
+
+  startSeconds = null;
+  endSeconds = null;
+  player.seekTo(0);
+  player.pauseVideo();
+
+  document.getElementById('set-start-btn').style.display = 'inline-block';
+  document.getElementById('set-end-btn').style.display = 'none';
+  document.getElementById('start-over-btn').style.display = 'none';
+  document.getElementById('save-clip-btn').style.display = 'none';
+
+  updateStatus('Reset. Play the video and click "Set Start Time" when ready.');
+  state = 'loaded';
+});
+
+// Save clip
+document.getElementById('save-clip-btn').addEventListener('click', () => {
+  if (!videoId || startSeconds === null || endSeconds === null) {
+    alert('Please set both start and end times');
+    return;
+  }
+
+  document.getElementById('form-video-id').value = videoId;
+  document.getElementById('form-start-seconds').value = startSeconds;
+  document.getElementById('form-end-seconds').value = endSeconds;
+  document.getElementById('clip-form').submit();
+});
+</script>
+{% endblock %}
