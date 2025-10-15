@@ -5,7 +5,7 @@
 
 {% block content %}
 <div id="content-main">
-  <h1>Create YouTube Clip</h1>
+  <h1>{% if is_edit %}Edit{% else %}Create{% endif %} YouTube Clip</h1>
 
   <div class="module" style="max-width: 900px;">
     <!-- Video ID Input -->
@@ -17,6 +17,7 @@
           id="video-input"
           placeholder="Enter video ID (e.g., dQw4w9WgXcQ) or full URL"
           style="width: 100%; padding: 8px; font-size: 14px;"
+          {% if is_edit %}value="{{ clip.video_id }}"{% endif %}
         >
         <button
           type="button"
@@ -30,7 +31,7 @@
     </div>
 
     <!-- Title Input -->
-    <div class="form-row" id="title-container" style="margin-bottom: 20px; display: none;">
+    <div class="form-row" id="title-container" style="margin-bottom: 20px; {% if is_edit %}display: block;{% else %}display: none;{% endif %}">
       <div>
         <label for="title-input">Video Title:</label>
         <input
@@ -38,6 +39,7 @@
           id="title-input"
           placeholder="Loading title..."
           style="width: 100%; padding: 8px; font-size: 14px;"
+          {% if is_edit %}value="{{ clip.title }}"{% endif %}
         >
       </div>
     </div>
@@ -92,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => YouTubeClipCreator.init());
 // YouTube API ready callback
 function onYouTubeIframeAPIReady() {
   console.log('YouTube API ready');
+  YouTubeClipCreator.onYouTubeAPIReady();
 }
 
 const YouTubeClipCreator = {
@@ -102,6 +105,17 @@ const YouTubeClipCreator = {
   endSeconds: null,
   loopInterval: null,
   state: 'idle', // idle, loaded, start_set, end_set, previewing
+  youtubeAPIReady: false,
+  pendingInit: false,
+  isEdit: {{ is_edit|lower }},
+  {% if is_edit %}
+  existingClip: {
+    videoId: '{{ clip.video_id }}',
+    startSeconds: {{ clip.start_seconds }},
+    endSeconds: {{ clip.end_seconds }},
+    title: '{{ clip.title|default:"" }}'
+  },
+  {% endif %}
 
   // Cached DOM elements
   elements: {},
@@ -137,6 +151,28 @@ const YouTubeClipCreator = {
 
     // Start time display updates
     setInterval(() => this.updateTimeDisplay(), 100);
+
+    // If editing, prepare to auto-load the video when API is ready
+    if (this.isEdit && this.existingClip) {
+      this.videoId = this.existingClip.videoId;
+      this.startSeconds = this.existingClip.startSeconds;
+      this.endSeconds = this.existingClip.endSeconds;
+      this.pendingInit = true;
+
+      // If API is already ready, init now
+      if (this.youtubeAPIReady) {
+        this.initPlayer();
+      }
+    }
+  },
+
+  onYouTubeAPIReady() {
+    this.youtubeAPIReady = true;
+    // If we have a pending init (edit mode), initialize the player
+    if (this.pendingInit) {
+      this.initPlayer();
+      this.pendingInit = false;
+    }
   },
 
   parseVideoId(input) {
@@ -184,9 +220,19 @@ const YouTubeClipCreator = {
     this.playerReady = true;
     this.elements.playerContainer.style.display = 'block';
     this.elements.controls.style.display = 'block';
-    this.elements.setStartBtn.style.display = 'inline-block';
-    this.updateStatus('Video loaded. Play the video and click "Set Start Time" when ready.');
-    this.state = 'loaded';
+
+    // If editing and clip times are set, go to preview mode
+    if (this.isEdit && this.startSeconds !== null && this.endSeconds !== null) {
+      this.elements.startOverBtn.style.display = 'inline-block';
+      this.elements.saveClipBtn.style.display = 'inline-block';
+      this.updateStatus(`Editing clip from ${this.startSeconds.toFixed(2)}s to ${this.endSeconds.toFixed(2)}s. Click "Start Over" to reset times or "Save Clip" to save changes.`);
+      this.state = 'previewing';
+      this.startPreview();
+    } else {
+      this.elements.setStartBtn.style.display = 'inline-block';
+      this.updateStatus('Video loaded. Play the video and click "Set Start Time" when ready.');
+      this.state = 'loaded';
+    }
   },
 
   onPlayerStateChange(event) {
