@@ -76,13 +76,15 @@ WSGI_APPLICATION = 'language_listening_practice_app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Use Railway's DATABASE_URL if available, otherwise use local PostgreSQL
-database_url = os.environ.get('DATABASE_URL', 'postgresql://language_listening_practice_user:password123@localhost:5432/language_listening_practice_app')
-print(f"Using DATABASE_URL: {database_url[:80]}...")
+# Debug: Print DATABASE_URL to see if it's set
+print(f"DATABASE_URL exists: {'DATABASE_URL' in os.environ}")
+if 'DATABASE_URL' in os.environ:
+    print(f"DATABASE_URL value: {os.environ.get('DATABASE_URL')[:50]}...")  # Print first 50 chars
 
+# Use Railway's DATABASE_URL if available, otherwise use local PostgreSQL
 DATABASES = {
-    'default': dj_database_url.parse(
-        database_url,
+    'default': dj_database_url.config(
+        default='postgresql://language_listening_practice_user:password123@localhost:5432/language_listening_practice_app',
         conn_max_age=600,
         conn_health_checks=True,
     )
