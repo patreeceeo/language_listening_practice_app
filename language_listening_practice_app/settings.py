@@ -77,25 +77,13 @@ WSGI_APPLICATION = 'language_listening_practice_app.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Use Railway's DATABASE_URL if available, otherwise use local PostgreSQL
-if 'DATABASE_URL' in os.environ:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'language_listening_practice_app',
-            'USER': 'language_listening_practice_user',
-            'PASSWORD': 'password123',
-            'HOST': 'localhost',
-            'PORT': '5432',
-        }
-    }
+DATABASES = {
+    'default': dj_database_url.config(
+        default='postgresql://language_listening_practice_user:password123@localhost:5432/language_listening_practice_app',
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 
 # Password validation
