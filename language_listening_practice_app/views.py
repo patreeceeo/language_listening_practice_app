@@ -9,6 +9,10 @@ from .utils import relative_datetime
 
 from .models import Exercise, ExerciseAttempt
 
+def home(request: HttpRequest):
+    """Display the home/landing page."""
+    return render(request, 'home.html')
+
 def get_exercise_context(exercise: Exercise, total_exercises: int, exercise_index: int) -> dict:
     attempts = ExerciseAttempt.objects.filter(exercise=exercise)
     return {

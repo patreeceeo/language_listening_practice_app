@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Language Listening Practice{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <h1 class="text-4xl font-bold text-gray-800 mb-4">Language Listening Practice</h1>
+  <p class="text-xl text-gray-600 mb-8">Improve your Japanese listening skills with interactive exercises</p>
+
+  {% if user.is_authenticated %}
+    <div class="space-y-4">
+      <a href="{% url 'current_exercise' %}" class="inline-block bg-green-600 text-white py-4 px-8 rounded-lg hover:bg-green-700 transition text-lg font-semibold">
+        Start Practicing
+      </a>
+      <p class="text-gray-600">
+        <a href="{% url 'profile' %}" class="text-blue-600 hover:underline">View your profile</a>
+      </p>
+    </div>
+  {% else %}
+    <div class="space-y-4">
+      <a href="{% url 'login' %}" class="inline-block bg-blue-600 text-white py-4 px-8 rounded-lg hover:bg-blue-700 transition text-lg font-semibold">
+        Login to Start
+      </a>
+      <p class="text-gray-600">New user? <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login here</a></p>
+    </div>
+  {% endif %}
+
+  <div class="mt-16 text-left max-w-2xl mx-auto">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Features</h2>
+    <ul class="space-y-3 text-gray-700">
+      <li class="flex items-start">
+        <span class="text-green-600 mr-2">✓</span>
+        <span>Practice with real Japanese video content from YouTube</span>
+      </li>
+      <li class="flex items-start">
+        <span class="text-green-600 mr-2">✓</span>
+        <span>Multiple exercise types: shadowing, transcription, and multiple choice</span>
+      </li>
+      <li class="flex items-start">
+        <span class="text-green-600 mr-2">✓</span>
+        <span>Adaptive practice that focuses on exercises you need most</span>
+      </li>
+      <li class="flex items-start">
+        <span class="text-green-600 mr-2">✓</span>
+        <span>Track your progress and see your improvement over time</span>
+      </li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

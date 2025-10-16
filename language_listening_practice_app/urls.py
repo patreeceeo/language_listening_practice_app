@@ -20,6 +20,7 @@ from django.urls import path, include
 from . import views
 
 urlpatterns = [
+    path('', views.home, name='home'),
     # Override the logout view to redirect to login page after logout
     path("accounts/logout/", LogoutView.as_view(next_page='/accounts/login/'), name="logout"),
     path("accounts/", include("django.contrib.auth.urls")),
