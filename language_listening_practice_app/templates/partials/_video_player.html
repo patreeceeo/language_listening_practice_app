@@ -25,16 +25,36 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => VideoPlayerPartial.init());
 
+  // Global callback for YouTube IFrame API
+  function onYouTubeIframeAPIReady() {
+    VideoPlayerPartial.onYouTubeAPIReady();
+  }
 
   const VideoPlayerPartial = {
     player: null,
     playerReady: false,
+    youtubeAPIReady: false,
+    pendingInit: false,
     videoParams: {
       videoId: "{{ youtube_video_id }}",
       startSeconds: {{ start_seconds }},
       endSeconds: {{ end_seconds }}
     },
     init() {
+      if (this.youtubeAPIReady) {
+        this.initPlayer();
+      } else {
+        this.pendingInit = true;
+      }
+    },
+    onYouTubeAPIReady() {
+      this.youtubeAPIReady = true;
+      if (this.pendingInit) {
+        this.initPlayer();
+        this.pendingInit = false;
+      }
+    },
+    initPlayer() {
       this.player = new YT.Player('player', {
         playerVars: {
           playsinline: 1,
