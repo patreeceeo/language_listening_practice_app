@@ -41,7 +41,11 @@
       endSeconds: {{ end_seconds }}
     },
     init() {
-      if (this.youtubeAPIReady) {
+      // Check if YT API is already loaded (might be cached from previous page)
+      if (typeof YT !== 'undefined' && YT.Player) {
+        this.youtubeAPIReady = true;
+        this.initPlayer();
+      } else if (this.youtubeAPIReady) {
         this.initPlayer();
       } else {
         this.pendingInit = true;
