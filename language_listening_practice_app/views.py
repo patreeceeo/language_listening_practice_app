@@ -70,15 +70,20 @@ def get_exercise_practice_set_with_caching(user: User) -> list[Exercise]:
         exercises = refresh_exercise_set_cache(user)
     return exercises
 
-def next_exercise_practice_set_index(user: User) -> int:
+def get_exercise_practice_set_index(user: User) -> int:
     """Retrieve the current index in the exercise practice set with caching."""
     cache_key = f'exercise_practice_set_index:{user.id}'
     index = cache.get(cache_key)
     if index is None:
         index = 0
         cache.set(cache_key, index, 60)
-    cache.set(cache_key, index + 1, 60)
     return index
+
+def next_exercise_practice_set_index(user: User):
+    """Increment the exercise practice set index by 1."""
+    cache_key = f'exercise_practice_set_index:{user.id}'
+    index = get_exercise_practice_set_index(user)
+    cache.set(cache_key, index + 1, 60)
 
 def reset_exercise_practice_set_index(user: User):
     """Reset the exercise practice set index to 0."""
@@ -89,7 +94,7 @@ def reset_exercise_practice_set_index(user: User):
 def current_exercise(request: HttpRequest):
     """Display the current exercise page."""
     exercises = get_exercise_practice_set_with_caching(request.user)
-    index = next_exercise_practice_set_index(request.user)
+    index = get_exercise_practice_set_index(request.user)
 
     total_exercises = len(exercises)
 
@@ -125,5 +130,6 @@ def submit_answer(request: HttpRequest):
             user=request.user
     )
     attempt.save()
+    increment_exercise_practice_set_index(request.user)
     return HttpResponseRedirect(reverse("current_exercise"))
 
