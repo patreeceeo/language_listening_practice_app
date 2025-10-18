@@ -79,7 +79,7 @@ def get_exercise_practice_set_index(user: User) -> int:
         cache.set(cache_key, index, 60)
     return index
 
-def next_exercise_practice_set_index(user: User):
+def increment_exercise_practice_set_index(user: User):
     """Increment the exercise practice set index by 1."""
     cache_key = f'exercise_practice_set_index:{user.id}'
     index = get_exercise_practice_set_index(user)
