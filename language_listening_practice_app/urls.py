@@ -21,6 +21,7 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('privacy/', views.privacy_policy, name='privacy_policy'),
     # Override the logout view to redirect to login page after logout
     path("accounts/logout/", LogoutView.as_view(next_page='/accounts/login/'), name="logout"),
     path("accounts/", include("django.contrib.auth.urls")),

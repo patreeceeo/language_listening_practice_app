@@ -13,6 +13,10 @@ def home(request: HttpRequest):
     """Display the home/landing page."""
     return render(request, 'home.html')
 
+def privacy_policy(request: HttpRequest):
+    """Display the privacy policy page."""
+    return render(request, 'privacy.html')
+
 def get_exercise_context(exercise: Exercise, total_exercises: int, exercise_index: int) -> dict:
     attempts = ExerciseAttempt.objects.filter(exercise=exercise)
     return {
