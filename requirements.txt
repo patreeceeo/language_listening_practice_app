@@ -6,3 +6,4 @@ tzdata==2025.2
 gunicorn==23.0.0
 whitenoise==6.8.2
 dj-database-url==2.3.0
+markdown==3.7
