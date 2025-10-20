@@ -11,6 +11,7 @@ Install the dependencies:
 
 ```bash
 poetry install
+npm install
 ```
 
 Set up a development Postgres database. Refer to `language_listening_practice_app/settings.py` for the database configuration.
