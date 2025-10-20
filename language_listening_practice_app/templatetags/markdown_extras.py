@@ -18,7 +18,7 @@ class MarkdownNode(template.Node):
         # Strip leading/trailing whitespace
         cleaned = dedented.strip()
         # Convert to HTML
-        html = md.markdown(cleaned)
+        html = md.markdown(cleaned, extensions=['toc'])
         return mark_safe(html)
 
 
@@ -55,5 +55,5 @@ def markdown_filter(content):
     """
     if not content:
         return ''
-    html = md.markdown(str(content))
+    html = md.markdown(str(content), extensions=['toc'])
     return mark_safe(html)
