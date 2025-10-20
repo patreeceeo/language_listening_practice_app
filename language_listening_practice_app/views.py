@@ -17,6 +17,10 @@ def privacy_policy(request: HttpRequest):
     """Display the privacy policy page."""
     return render(request, 'privacy.html')
 
+def terms_of_service(request: HttpRequest):
+    """Display the terms of service page."""
+    return render(request, 'terms.html')
+
 def get_exercise_context(exercise: Exercise, total_exercises: int, exercise_index: int) -> dict:
     attempts = ExerciseAttempt.objects.filter(exercise=exercise)
     return {
