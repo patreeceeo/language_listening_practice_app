@@ -3,3 +3,10 @@
 
 # Django
 db.sqlite3
+
+# NodeJS
+node_modules/
+
+# Tailwind CSS
+language_listening_practice_app/static/css/output.css
+
