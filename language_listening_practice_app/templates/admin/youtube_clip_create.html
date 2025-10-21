@@ -22,6 +22,7 @@
   }
   #time-slider {
     margin: 20px 0;
+    position: relative;
   }
   .noUi-connect {
     background: #417690;
@@ -33,6 +34,20 @@
     border: 2px solid #417690;
     background: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .playback-position {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ff4444;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    pointer-events: none;
+    z-index: 10;
+    display: none;
   }
 </style>
 {% endblock %}
@@ -121,7 +136,9 @@
             <span id="end-time-label">0:00</span>
           </div>
         </div>
-        <div id="time-slider"></div>
+        <div id="time-slider">
+          <div id="playback-position" class="playback-position"></div>
+        </div>
       </div>
 
       <div style="margin-top: 20px;">
@@ -164,6 +181,7 @@ const YouTubeClipCreator = {
   videoDuration: null,
   loopInterval: null,
   slider: null,
+  positionUpdateInterval: null,
   state: 'idle', // idle, loaded, previewing
   youtubeAPIReady: false,
   pendingInit: false,
@@ -194,6 +212,7 @@ const YouTubeClipCreator = {
       timeSlider: document.getElementById('time-slider'),
       startTimeLabel: document.getElementById('start-time-label'),
       endTimeLabel: document.getElementById('end-time-label'),
+      playbackPosition: document.getElementById('playback-position'),
       saveClipBtn: document.getElementById('save-clip-btn'),
       formVideoId: document.getElementById('form-video-id'),
       formStartSeconds: document.getElementById('form-start-seconds'),
@@ -257,6 +276,31 @@ const YouTubeClipCreator = {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  },
+
+  updatePlaybackPosition() {
+    if (!this.playerReady || !this.videoDuration) return;
+
+    const currentTime = this.player.getCurrentTime();
+    const percentage = (currentTime / this.videoDuration) * 100;
+
+    // Position the indicator
+    this.elements.playbackPosition.style.left = `${percentage}%`;
+    this.elements.playbackPosition.style.display = 'block';
+  },
+
+  startPositionUpdates() {
+    this.stopPositionUpdates();
+    this.positionUpdateInterval = setInterval(() => {
+      this.updatePlaybackPosition();
+    }, 100);
+  },
+
+  stopPositionUpdates() {
+    if (this.positionUpdateInterval) {
+      clearInterval(this.positionUpdateInterval);
+      this.positionUpdateInterval = null;
+    }
   },
 
   initSlider() {
@@ -324,6 +368,7 @@ const YouTubeClipCreator = {
 
   initPlayer() {
     this.stopPreview();
+    this.stopPositionUpdates();
     if (this.player) {
       this.player.destroy();
     }
@@ -350,6 +395,9 @@ const YouTubeClipCreator = {
 
     // Initialize slider
     this.initSlider();
+
+    // Start updating playback position
+    this.startPositionUpdates();
 
     // Update status
     if (this.isEdit && this.startSeconds !== null && this.endSeconds !== null) {
