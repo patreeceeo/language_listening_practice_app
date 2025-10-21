@@ -31,23 +31,28 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    border: 2px solid #417690;
-    background: white;
+    border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .noUi-horizontal .noUi-handle-lower {
+    background: #22c55e;
+  }
+  .noUi-horizontal .noUi-handle-upper {
+    background: #ef4444;
   }
   .playback-position {
     position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #ff4444;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    top: 0;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 12px solid #6b7280;
     pointer-events: none;
     z-index: 10;
     display: none;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
   }
 </style>
 {% endblock %}
