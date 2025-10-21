@@ -133,11 +133,9 @@
       <div class="time-slider-container">
         <div class="time-labels">
           <div>
-            <label>Start: </label>
             <span id="start-time-label">0:00</span>
           </div>
           <div>
-            <label>End: </label>
             <span id="end-time-label">0:00</span>
           </div>
         </div>
@@ -186,6 +184,8 @@ const YouTubeClipCreator = {
   videoDuration: null,
   loopInterval: null,
   slider: null,
+  sliderMin: null,
+  sliderMax: null,
   positionUpdateInterval: null,
   state: 'idle', // idle, loaded, previewing
   youtubeAPIReady: false,
@@ -287,10 +287,12 @@ const YouTubeClipCreator = {
     if (!this.playerReady || !this.videoDuration) return;
 
     const currentTime = this.player.getCurrentTime();
-    const percentage = (currentTime / this.videoDuration) * 100;
+    const visibleRange = this.sliderMax - this.sliderMin;
+    const percentage = ((currentTime - this.sliderMin) / visibleRange) * 100;
 
-    // Position the indicator
-    this.elements.playbackPosition.style.left = `${percentage}%`;
+    // Position the indicator (clamp between 0-100%)
+    const clampedPercentage = Math.max(0, Math.min(100, percentage));
+    this.elements.playbackPosition.style.left = `${clampedPercentage}%`;
     this.elements.playbackPosition.style.display = 'block';
   },
 
@@ -320,21 +322,30 @@ const YouTubeClipCreator = {
     const startValue = this.startSeconds !== null ? this.startSeconds : 0;
     const endValue = this.endSeconds !== null ? this.endSeconds : this.videoDuration;
 
-    // Create slider
+    // Calculate initial range with 50% margins
+    const clipLength = endValue - startValue;
+    const margin = clipLength * 0.5;
+    this.sliderMin = Math.max(0, startValue - margin);
+    this.sliderMax = Math.min(this.videoDuration, endValue + margin);
+
+    // Create slider with tooltips
     this.slider = noUiSlider.create(this.elements.timeSlider, {
       start: [startValue, endValue],
       connect: true,
       range: {
-        min: 0,
-        max: this.videoDuration
+        min: this.sliderMin,
+        max: this.sliderMax
       },
       step: 0.1,
-      tooltips: false
+      tooltips: [
+        { to: (value) => this.formatTime(value) },
+        { to: (value) => this.formatTime(value) }
+      ]
     });
 
-    // Update labels initially
-    this.elements.startTimeLabel.textContent = this.formatTime(startValue);
-    this.elements.endTimeLabel.textContent = this.formatTime(endValue);
+    // Update labels to show visible range
+    this.elements.startTimeLabel.textContent = this.formatTime(this.sliderMin);
+    this.elements.endTimeLabel.textContent = this.formatTime(this.sliderMax);
     this.startSeconds = startValue;
     this.endSeconds = endValue;
 
@@ -347,8 +358,6 @@ const YouTubeClipCreator = {
       const start = parseFloat(values[0]);
       const end = parseFloat(values[1]);
 
-      this.elements.startTimeLabel.textContent = this.formatTime(start);
-      this.elements.endTimeLabel.textContent = this.formatTime(end);
       this.startSeconds = start;
       this.endSeconds = end;
     });
@@ -357,6 +366,9 @@ const YouTubeClipCreator = {
     this.slider.on('change', (values) => {
       const start = parseFloat(values[0]);
       const end = parseFloat(values[1]);
+
+      // Update the slider range
+      this.updateSliderRange(start, end);
 
       // Only restart playback if start time changed
       if (start !== previousStart) {
@@ -369,6 +381,32 @@ const YouTubeClipCreator = {
       previousStart = start;
       previousEnd = end;
     });
+  },
+
+  updateSliderRange(start, end) {
+    // Calculate new range with 50% margins
+    const clipLength = end - start;
+    const margin = clipLength * 0.5;
+    const newMin = Math.max(0, start - margin);
+    const newMax = Math.min(this.videoDuration, end + margin);
+
+    // Only update if the range actually changed
+    if (newMin !== this.sliderMin || newMax !== this.sliderMax) {
+      this.sliderMin = newMin;
+      this.sliderMax = newMax;
+
+      // Update the slider range
+      this.slider.updateOptions({
+        range: {
+          min: this.sliderMin,
+          max: this.sliderMax
+        }
+      }, true); // true = don't fire events
+
+      // Update labels to show new visible range
+      this.elements.startTimeLabel.textContent = this.formatTime(this.sliderMin);
+      this.elements.endTimeLabel.textContent = this.formatTime(this.sliderMax);
+    }
   },
 
   initPlayer() {
