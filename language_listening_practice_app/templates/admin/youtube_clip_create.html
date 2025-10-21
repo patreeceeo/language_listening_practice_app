@@ -3,6 +3,40 @@
 
 {% block title %}Create YouTube Clip{% endblock %}
 
+{% block extrastyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" />
+<style>
+  .time-slider-container {
+    margin: 30px 0;
+    padding: 20px;
+  }
+  .time-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #666;
+  }
+  .time-labels span {
+    font-weight: bold;
+  }
+  #time-slider {
+    margin: 20px 0;
+  }
+  .noUi-connect {
+    background: #417690;
+  }
+  .noUi-horizontal .noUi-handle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #417690;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div id="content-main">
   <h1>{% if is_edit %}Edit{% else %}Create{% endif %} YouTube Clip</h1>
@@ -73,20 +107,25 @@
     <div id="controls" style="display: none;">
       <div style="margin-bottom: 20px;">
         <p id="status-message" style="font-weight: bold; color: #417690;"></p>
-        <p id="time-display" style="color: #666;"></p>
       </div>
 
-      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <button type="button" id="set-start-btn" class="button" style="display: none;">
-          Set Start Time
-        </button>
-        <button type="button" id="set-end-btn" class="button" style="display: none;">
-          Set End Time
-        </button>
-        <button type="button" id="start-over-btn" class="button default" style="display: none;">
-          Start Over
-        </button>
-        <button type="button" id="save-clip-btn" class="button" style="display: none;">
+      <!-- Time Slider -->
+      <div class="time-slider-container">
+        <div class="time-labels">
+          <div>
+            <label>Start: </label>
+            <span id="start-time-label">0:00</span>
+          </div>
+          <div>
+            <label>End: </label>
+            <span id="end-time-label">0:00</span>
+          </div>
+        </div>
+        <div id="time-slider"></div>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button type="button" id="save-clip-btn" class="button">
           Save Clip
         </button>
       </div>
@@ -103,7 +142,8 @@
   </div>
 </div>
 
-<!-- Load YouTube IFrame API -->
+<!-- Load Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -121,8 +161,10 @@ const YouTubeClipCreator = {
   videoId: null,
   startSeconds: null,
   endSeconds: null,
+  videoDuration: null,
   loopInterval: null,
-  state: 'idle', // idle, loaded, start_set, end_set, previewing
+  slider: null,
+  state: 'idle', // idle, loaded, previewing
   youtubeAPIReady: false,
   pendingInit: false,
   isEdit: {{ is_edit|lower }},
@@ -149,10 +191,9 @@ const YouTubeClipCreator = {
       playerContainer: document.getElementById('player-container'),
       controls: document.getElementById('controls'),
       statusMessage: document.getElementById('status-message'),
-      timeDisplay: document.getElementById('time-display'),
-      setStartBtn: document.getElementById('set-start-btn'),
-      setEndBtn: document.getElementById('set-end-btn'),
-      startOverBtn: document.getElementById('start-over-btn'),
+      timeSlider: document.getElementById('time-slider'),
+      startTimeLabel: document.getElementById('start-time-label'),
+      endTimeLabel: document.getElementById('end-time-label'),
       saveClipBtn: document.getElementById('save-clip-btn'),
       formVideoId: document.getElementById('form-video-id'),
       formStartSeconds: document.getElementById('form-start-seconds'),
@@ -165,13 +206,7 @@ const YouTubeClipCreator = {
     this.elements.existingVideoSelect.addEventListener('change', () => this.onExistingVideoSelect());
     this.elements.videoInput.addEventListener('input', () => this.onVideoInputChange());
     this.elements.loadVideoBtn.addEventListener('click', () => this.onLoadVideo());
-    this.elements.setStartBtn.addEventListener('click', () => this.onSetStart());
-    this.elements.setEndBtn.addEventListener('click', () => this.onSetEnd());
-    this.elements.startOverBtn.addEventListener('click', () => this.onStartOver());
     this.elements.saveClipBtn.addEventListener('click', () => this.onSaveClip());
-
-    // Start time display updates
-    setInterval(() => this.updateTimeDisplay(), 100);
 
     // If editing, prepare to auto-load the video when API is ready
     if (this.isEdit && this.existingClip) {
@@ -218,6 +253,75 @@ const YouTubeClipCreator = {
     return null;
   },
 
+  formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  },
+
+  initSlider() {
+    if (this.slider) {
+      this.slider.destroy();
+    }
+
+    // Get video duration
+    this.videoDuration = this.player.getDuration();
+
+    // Set initial values
+    const startValue = this.startSeconds !== null ? this.startSeconds : 0;
+    const endValue = this.endSeconds !== null ? this.endSeconds : this.videoDuration;
+
+    // Create slider
+    this.slider = noUiSlider.create(this.elements.timeSlider, {
+      start: [startValue, endValue],
+      connect: true,
+      range: {
+        min: 0,
+        max: this.videoDuration
+      },
+      step: 0.1,
+      tooltips: false
+    });
+
+    // Update labels initially
+    this.elements.startTimeLabel.textContent = this.formatTime(startValue);
+    this.elements.endTimeLabel.textContent = this.formatTime(endValue);
+    this.startSeconds = startValue;
+    this.endSeconds = endValue;
+
+    // Track previous values to detect which handle changed
+    let previousStart = startValue;
+    let previousEnd = endValue;
+
+    // Handle slider updates
+    this.slider.on('update', (values) => {
+      const start = parseFloat(values[0]);
+      const end = parseFloat(values[1]);
+
+      this.elements.startTimeLabel.textContent = this.formatTime(start);
+      this.elements.endTimeLabel.textContent = this.formatTime(end);
+      this.startSeconds = start;
+      this.endSeconds = end;
+    });
+
+    // Handle slider change (when user releases)
+    this.slider.on('change', (values) => {
+      const start = parseFloat(values[0]);
+      const end = parseFloat(values[1]);
+
+      // Only restart playback if start time changed
+      if (start !== previousStart) {
+        this.player.seekTo(this.startSeconds);
+        this.startPreview();
+      }
+      // If only end time changed, just continue playing (loop will handle new end)
+
+      // Update previous values
+      previousStart = start;
+      previousEnd = end;
+    });
+  },
+
   initPlayer() {
     this.stopPreview();
     if (this.player) {
@@ -244,16 +348,16 @@ const YouTubeClipCreator = {
     this.elements.playerContainer.style.display = 'block';
     this.elements.controls.style.display = 'block';
 
-    // If editing and clip times are set, go to preview mode
+    // Initialize slider
+    this.initSlider();
+
+    // Update status
     if (this.isEdit && this.startSeconds !== null && this.endSeconds !== null) {
-      this.elements.startOverBtn.style.display = 'inline-block';
-      this.elements.saveClipBtn.style.display = 'inline-block';
-      this.updateStatus(`Editing clip from ${this.startSeconds.toFixed(2)}s to ${this.endSeconds.toFixed(2)}s. Click "Start Over" to reset times or "Save Clip" to save changes.`);
+      this.updateStatus(`Editing clip. Adjust the slider to change start/end times, then click "Save Clip".`);
       this.state = 'previewing';
       this.startPreview();
     } else {
-      this.elements.setStartBtn.style.display = 'inline-block';
-      this.updateStatus('Video loaded. Play the video and click "Set Start Time" when ready.');
+      this.updateStatus('Video loaded. Drag the slider handles to set your clip start and end times.');
       this.state = 'loaded';
     }
   },
@@ -268,20 +372,6 @@ const YouTubeClipCreator = {
 
   updateStatus(message) {
     this.elements.statusMessage.textContent = message;
-  },
-
-  updateTimeDisplay() {
-    if (this.playerReady && this.player.getCurrentTime) {
-      const currentTime = this.player.getCurrentTime().toFixed(2);
-      let display = `Current time: ${currentTime}s`;
-      if (this.startSeconds !== null) {
-        display += ` | Start: ${this.startSeconds.toFixed(2)}s`;
-      }
-      if (this.endSeconds !== null) {
-        display += ` | End: ${this.endSeconds.toFixed(2)}s`;
-      }
-      this.elements.timeDisplay.textContent = display;
-    }
   },
 
   onExistingVideoSelect() {
@@ -323,15 +413,8 @@ const YouTubeClipCreator = {
     this.endSeconds = null;
     this.state = 'idle';
 
-    // Hide all buttons
-    this.elements.setStartBtn.style.display = 'none';
-    this.elements.setEndBtn.style.display = 'none';
-    this.elements.startOverBtn.style.display = 'none';
-    this.elements.saveClipBtn.style.display = 'none';
-
     // Clear messages
     this.updateStatus('');
-    this.elements.timeDisplay.textContent = '';
 
     // Show and populate title field
     this.elements.titleContainer.style.display = 'block';
@@ -340,35 +423,6 @@ const YouTubeClipCreator = {
     this.fetchVideoTitle();
 
     this.initPlayer();
-  },
-
-  onSetStart() {
-    if (!this.playerReady) return;
-
-    this.startSeconds = this.player.getCurrentTime();
-    this.updateStatus(`Start time set to ${this.startSeconds.toFixed(2)}s. Now play to your desired end point and click "Set End Time".`);
-    this.elements.setStartBtn.style.display = 'none';
-    this.elements.setEndBtn.style.display = 'inline-block';
-    this.state = 'start_set';
-  },
-
-  onSetEnd() {
-    if (!this.playerReady || this.startSeconds === null) return;
-
-    this.endSeconds = this.player.getCurrentTime();
-
-    if (this.endSeconds <= this.startSeconds) {
-      alert('End time must be after start time');
-      return;
-    }
-
-    this.updateStatus(`Clip set! Preview playing from ${this.startSeconds.toFixed(2)}s to ${this.endSeconds.toFixed(2)}s. Click "Save Clip" when ready.`);
-    this.elements.setEndBtn.style.display = 'none';
-    this.elements.startOverBtn.style.display = 'inline-block';
-    this.elements.saveClipBtn.style.display = 'inline-block';
-
-    this.state = 'previewing';
-    this.startPreview();
   },
 
   startPreview() {
@@ -389,23 +443,6 @@ const YouTubeClipCreator = {
       clearInterval(this.loopInterval);
       this.loopInterval = null;
     }
-  },
-
-  onStartOver() {
-    this.stopPreview();
-
-    this.startSeconds = null;
-    this.endSeconds = null;
-    this.player.seekTo(0);
-    this.player.pauseVideo();
-
-    this.elements.setStartBtn.style.display = 'inline-block';
-    this.elements.setEndBtn.style.display = 'none';
-    this.elements.startOverBtn.style.display = 'none';
-    this.elements.saveClipBtn.style.display = 'none';
-
-    this.updateStatus('Reset. Play the video and click "Set Start Time" when ready.');
-    this.state = 'loaded';
   },
 
   onSaveClip() {
